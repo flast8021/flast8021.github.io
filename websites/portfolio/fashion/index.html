@@ -28,7 +28,7 @@
     <link rel="stylesheet"
         href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css" />
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-ERC6PB067L"></script>
 <script>
@@ -217,7 +217,22 @@
     <script>
         AOS.init();
     </script>
-
+<script src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js" data-cfasync="false"></script>
+<script>
+window.cookieconsent.initialise({
+  "palette": {
+    "popup": {
+      "background": "#1d8a8a"
+    },
+    "button": {
+      "background": "#62ffaa"
+    }
+  },
+  "content": {
+    "href": "https://flast8021.github.io/privacy.html"
+  }
+});
+</script>
 </body>
 
 </html>
