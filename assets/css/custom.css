@@ -217,7 +217,10 @@ header.hero-block a.btn-secondary:hover,
 header.hero-block a.btn-secondary:active { border-color: var(--white-000) }
 
 
-
+#btn-third{
+    margin-left: 40px;
+    margin-top: 35px;
+}
 
 
 header.hero-block h1 { color: var(--white-000) }
