@@ -1,0 +1,96 @@
+/*  ============= WEB BROWSER RESETS ============ */
+* { margin: 0; padding: 0; border: none }
+*, *::before, *::after { box-sizing: border-box }
+html { height: 100%; font-size: 100%; font: inherit; vertical-align: baseline;
+scroll-behavior: smooth; scroll-padding-top: 20px }
+body { max-width: 1600px; line-height: 1.5; margin-left: auto; margin-right: auto; 
+min-height: 100vh; text-rendering: optimizeSpeed }  
+img { width: 100%; height: auto; display: block }
+h1, h2, h3, h4 { width: 100% }
+input, button, textarea, select { font: inherit }
+
+/* ================= ENDS ================ */
+
+/* Desktops */
+@media (min-width: 768px) { body { padding: 4% 20% } }
+	
+/* Mobiles */
+@media (max-width: 767px) { body { padding: 12% 8% } }
+
+body { 
+    text-align: center;
+    background-color: #1f364d;
+    font-family: sans-serif;
+}
+
+h1 {
+    font-size: 78px;
+    font-weight: normal;
+    letter-spacing: -2px;
+    margin-bottom: 12px;
+    line-height: 1.2;
+    color: white;
+}
+
+h2 {
+    font-size: 42px;
+    letter-spacing: 6px;
+    margin-bottom: 48px;
+    line-height: 1.2;
+    color: white;
+}
+
+h3 {
+    font-size: 24px;
+    margin-top: 48px;
+    margin-bottom: 20px;
+    line-height: 1.2;
+    text-transform: uppercase;
+    color: white;
+}
+
+p {
+    font-size: 20px;
+    margin-bottom: 16px;
+    color: lightgreen;
+}
+img {
+margin-bottom: 32px;
+}
+a{
+    text-decoration: underline;
+    color: deeppink;
+}
+/*Menu*/
+/* 
+.container-menu a:link,
+.container-menu a:visited { color: var(--white-000) }
+.container-menu a:focus,
+.container-menu a:hover,
+.container-menu a:active { color: var(--gray-400) }
+.container-menu a#btn-cta:link,
+.container-menu a#btn-cta:visited { color: var(--white-000) }
+.container-menu a#btn-cta:focus,
+.container-menu a#btn-cta:hover,
+.container-menu a#btn-cta:active { color: var(--gray-400) }
+.container-menu .item-icon .bar1,.container-menu .item-icon .bar2,.container-menu .item-icon .bar3 { background-color: var(--white-000) }
+.container-menu.menu-mobile,
+.container-menu.menu-mobile ul.mobile-display { background-color: var(--teal-600) }
+.container-menu.menu-mobile ul.mobile-display a:link,
+.container-menu.menu-mobile ul.mobile-display a:visited { color: var(--white-000) }
+.container-menu.menu-mobile ul.mobile-display a:focus,
+.container-menu.menu-mobile ul.mobile-display a:hover,
+.container-menu.menu-mobile ul.mobile-display a:active { color: var(--gray-400) }
+.container-menu.menu-sticky.menu-desktop.menu-on-scroll,
+.container-menu.menu-sticky.menu-mobile.menu-on-scroll,
+.container-menu.menu-sticky.menu-mobile ul.mobile-display { background-color: var(--teal-600) }
+.container-menu.menu-on-scroll ul li a:link,
+.container-menu.menu-on-scroll ul li a:visited { color: var(--white-000) }
+.container-menu.menu-on-scroll ul li a:focus,
+.container-menu.menu-on-scroll ul li a:hover,
+.container-menu.menu-on-scroll ul li a:active { color: var(--gray-400) }
+.container-menu.menu-on-scroll .item-icon .bar1,.container-menu.menu-on-scroll .item-icon .bar2,.container-menu.menu-on-scroll .item-icon .bar3 { background-color: var(--white-000) }
+.container-menu.menu-desktop { background-color: var(--trans-000) }
+.container-menu.menu-mobile { background-color: var(--trans-000) }
+.container-menu.menu-mobile ul.mobile-display { background-color: var(--trans-000) }
+.container-menu .item-icon .bar1,.container-menu .item-icon .bar2,.container-menu .item-icon .bar3 { background-color: var(--white-000) } */
