@@ -675,7 +675,7 @@
     const yn = id => { const a = answerOf(id); return a === true ? "Yes" : a === false ? "No" : ""; };
     const r = v => v === undefined || v === null ? "" : Number(v.toFixed(6));
     return {
-      Time: new Date().toLocaleString(),
+      Time: stamp(new Date()),
       Coin: ($("coin").value || "").trim().toUpperCase(),
       Direction: state.dir.toUpperCase(),
       Score: s.score,
@@ -701,7 +701,7 @@
   function summaryText(){
     const s = computeScore(), c = state.calc;
     const d = new Date();
-    const date = String(d.getDate()).padStart(2,"0") + "/" + String(d.getMonth()+1).padStart(2,"0") + "/" + d.getFullYear();
+    const date = stamp(d);
     const coin = ($("coin").value || "COIN").trim().toUpperCase();
     const verdict = s.verdict.replace(/[^\w\s:+\-]/g,"").trim();
     const L = [];
@@ -762,7 +762,7 @@
       const rrv = r["Reward:Risk (net)"] ?? r["Reward:Risk"];
       const act = r["Actual P/L"];
       const cells = [
-        [String(r.Time || "").replace(/:\d{2}(\s?[AP]M)?$/i, "$1").replace(/^(\d+\/\d+)\/\d{4},?/, "$1")], [r.Coin || "–"], [r.Direction], [r.Score],
+        [fmtTime(r.Time)], [r.Coin || "–"], [r.Direction], [r.Score],
         [typeof rrv === "number" ? "1:" + rrv.toFixed(2) : "–"],
         [typeof pv === "number" && typeof lv === "number" ? pv.toFixed(2) + " / " + lv.toFixed(2) : "–"],
         [typeof act === "number" ? (act > 0 ? "+" : "") + act.toFixed(2) : "–", typeof act === "number" ? (act >= 0 ? "pos" : "neg") : ""]
@@ -772,9 +772,31 @@
     });
   }
 
+  // Date format: DD/MM/YYYY HH:MM (24-hour). Also converts trades saved in older formats.
+  function stamp(d){
+    const p = n => String(n).padStart(2, "0");
+    return p(d.getDate()) + "/" + p(d.getMonth() + 1) + "/" + d.getFullYear() + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+  function fmtTime(v){
+    const s = String(v || "").trim();
+    if (/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(s)) return s;
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s+(\d{1,2}):(\d{2})(?::\d{2})?\s*([AP]M)?$/i);
+    if (m){
+      let a = +m[1], b = +m[2], h = +m[4];
+      const ap = m[6] ? m[6].toUpperCase() : "";
+      if (ap === "PM" && h < 12) h += 12;
+      if (ap === "AM" && h === 12) h = 0;
+      const day = ap ? b : a, mon = ap ? a : b;           // AM/PM = US month/day, otherwise day/month
+      const d = new Date(+m[3], mon - 1, day, h, +m[5]);
+      if (!isNaN(d)) return stamp(d);
+    }
+    const d = new Date(s);
+    return isNaN(d) ? s : stamp(d);
+  }
+
   function toCsv(rows){
     const esc = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; };
-    return [CSV_COLS.join(","), ...rows.map(r => CSV_COLS.map(k => esc(r[k])).join(","))].join("\r\n");
+    return [CSV_COLS.join(","), ...rows.map(r => CSV_COLS.map(k => esc(k === "Time" ? fmtTime(r[k]) : r[k])).join(","))].join("\r\n");
   }
 
   function download(name, text){
