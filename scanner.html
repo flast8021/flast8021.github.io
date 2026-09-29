@@ -620,6 +620,7 @@
       $("topTitle").textContent = topN;
       renderResults(found.slice(0, topN));
       $("status").textContent = (btcNote ? btcNote.trim() + " " : "") + "Done. " + found.length + " coin" + (found.length === 1 ? "" : "s") + " near a level out of " + list.length + " scanned" + (fails ? " (" + fails + " failed to load)" : "") + ".";
+      saveResults();
     } catch(e){
       $("status").textContent = "Scan stopped.";
       showErr(e instanceof TypeError ? explainFetchError(e) : "<b>Scan stopped:</b> " + esc(e && e.message ? e.message : e));
@@ -675,6 +676,29 @@
       '</div>';
     }).join("");
   }
+
+  // ---------------- KEEP LAST RESULTS ----------------
+  const RKEY = "mwScannerLastResults";
+  function saveResults(){
+    try {
+      localStorage.setItem(RKEY, JSON.stringify({
+        at: Date.now(), market: $("mktCard").innerHTML, results: $("results").innerHTML, top: $("topTitle").textContent
+      }));
+    } catch(e){}
+  }
+  function restoreResults(){
+    let s = null;
+    try { s = JSON.parse(localStorage.getItem(RKEY) || "null"); } catch(e){}
+    if (!s || !s.results) return;
+    $("mktCard").innerHTML = s.market; $("mktCard").hidden = false;
+    $("results").innerHTML = s.results;
+    $("topTitle").textContent = s.top;
+    const d = new Date(s.at), mins = Math.round((Date.now() - s.at) / 60000);
+    const hhmm = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    $("status").textContent = "Showing results from " + hhmm + " (" +
+      (mins < 1 ? "just now" : mins < 60 ? mins + " min ago" : Math.round(mins / 60) + " h ago") + "). Select Scan now for fresh results.";
+  }
+  restoreResults();
 
   $("btnScan").addEventListener("click", scan);
   $("btnTest").addEventListener("click", testConnection);
