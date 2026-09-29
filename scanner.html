@@ -302,12 +302,24 @@
           sym: t.symbol, base: t.symbol.replace(/_USDT$/, ""), last: +t.lastPrice, vol: +t.amount24,
           chg: +t.riseFallRate * 100, funding: +t.fundingRate, bid: +t.bid1, ask: +t.ask1 }));
       },
-      async klines(sym, tf){
+            async klines(sym, tf){
+        const base = "https://contract.mexc.com/api/v1/contract/kline/" + sym + "?interval=" + TF[tf].mexc;
         const start = Math.floor(Date.now() / 1000) - TF[tf].n * TF[tf].sec;
-        const j = await getJSON("https://contract.mexc.com/api/v1/contract/kline/" + sym + "?interval=" + TF[tf].mexc + "&start=" + start);
-        const d = j && j.data;
-        if (!d || !Array.isArray(d.time)) throw new Error("No candles");
-        return d.time.map((t, i) => ({ t: t * 1000, o: +d.open[i], h: +d.high[i], l: +d.low[i], c: +d.close[i], v: +d.vol[i] }));
+        const parse = j => {
+          if (j && j.success === false) throw new Error("MEXC: " + (j.message || j.msg || ("code " + j.code)));
+          const d = j && j.data;
+          if (d && Array.isArray(d.time) && d.time.length)
+            return d.time.map((t, i) => ({ t: t * 1000, o: +d.open[i], h: +d.high[i], l: +d.low[i], c: +d.close[i], v: +d.vol[i] }));
+          if (Array.isArray(d) && d.length)
+            return d.map(k => Array.isArray(k)
+              ? { t: +k[0] * (k[0] < 1e12 ? 1000 : 1), o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }
+              : { t: +k.time * (k.time < 1e12 ? 1000 : 1), o: +k.open, h: +k.high, l: +k.low, c: +k.close, v: +k.vol });
+          return null;
+        };
+        let out = parse(await getJSON(base + "&start=" + start));
+        if (!out){ await sleep(250); out = parse(await getJSON(base)); }
+        if (!out) throw new Error("MEXC returned no candles for " + sym + " (" + TF[tf].mexc + ")");
+        return out.slice(-TF[tf].n);
       }
     },
     binance: {
