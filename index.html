@@ -1181,8 +1181,19 @@
     $("btnDismiss").addEventListener("click", () => clearSugg());
   }
   function importFromScanner(){
-    let p;
-    try { p = new URLSearchParams(location.search); } catch(e){ return; }
+    let p = null;
+    try {
+      const url = new URLSearchParams(location.search);
+      const hid = url.get("h");
+      // Always strip the web address, so a reload can never import again
+      if (location.search) history.replaceState(null, "", location.pathname + location.hash);
+      if (!hid) return;
+      const ho = JSON.parse(localStorage.getItem("mwHandover") || "null");
+      if (!ho || ho.id !== hid) return;                 // already used, or replaced by a newer click
+      localStorage.removeItem("mwHandover");            // one-time: delete before using
+      if (!(Date.now() - ho.at < 120000)) return;       // unused handovers expire after 2 minutes
+      p = new URLSearchParams(String(ho.q || ""));
+    } catch(e){ return; }
     const coin = (p.get("coin") || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (!coin) return;
     const dir = p.get("dir") === "short" ? "short" : "long";
@@ -1198,7 +1209,6 @@
     }
     state.sugg = Object.keys(valid).length ? valid : null;
     state.suggMeta = { coin, dir, score: meta.score, status: meta.status, ex: meta.ex, live: typeof meta.live === "string" ? meta.live.slice(0, 80) : "" };
-    try { history.replaceState(null, "", location.pathname + location.hash); } catch(e){}
     refresh(); renderSuggBanner();
     let lcfg = null; try { lcfg = validLiveCfg(JSON.parse(p.get("lw") || "null")); } catch(e){}
     if (lcfg && liveAllowed()) setTimeout(() => startLive(lcfg), 0);
@@ -1438,7 +1448,6 @@
     stopLive(true);
     lw = { cfg, t: { px: 0, c1: 0, c15: 0 }, price: null, funding: cfg.funding, c1: null, c15: null, read: null,
            updated: 0, err: "", busy: false, timer: null };
-    try { localStorage.setItem(LW_KEY, JSON.stringify({ cfg, at: Date.now() })); } catch(e){}
     document.body.classList.add("has-lw");
     $("lwBar").hidden = false;
     renderLW();
@@ -1570,15 +1579,8 @@
   });
 
   refresh(); renderLog(); markNav();
+  try { localStorage.removeItem(LW_KEY); } catch(e){}   // live data never resumes after a reload
   importFromScanner();
-  if (!lw){
-    try {
-      const sv = JSON.parse(localStorage.getItem(LW_KEY) || "null");
-      const c = sv && validLiveCfg(sv.cfg);
-      if (c && Date.now() - sv.at < 6 * 3600000 && liveAllowed()) startLive(c, true);
-      else localStorage.removeItem(LW_KEY);
-    } catch(e){}
-  }
 })();
 </script>
 <script>document.querySelectorAll(".cy").forEach(e => e.textContent = new Date().getFullYear());</script>
