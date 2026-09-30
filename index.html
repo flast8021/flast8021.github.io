@@ -265,7 +265,9 @@
   .qn:hover{color:var(--text); border-color:var(--blue)}
   .qn.active{color:#fff; border-color:transparent; background:linear-gradient(90deg,var(--royal),var(--blue))}
   #sec-checklist, #sec-calc{scroll-margin-top:60px}
-  a.qn{text-decoration:none; display:inline-block}
+  a.qn{text-decoration:none}
+  /* Buttons and the Scanner link: identical text alignment */
+  .quicknav .qn{display:inline-flex; align-items:center; justify-content:center; line-height:1.2; font-family:inherit; box-sizing:border-box}
   .sugg{display:block; margin-top:6px; padding:4px 10px; border-radius:999px; font-size:12px; cursor:pointer;
      background:rgba(26,155,240,0.10); border:1px dashed rgba(26,155,240,0.6); color:#8fd3ff; text-align:left}
   .sugg.n{background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.55); color:#fca5a5}
