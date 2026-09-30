@@ -728,6 +728,8 @@
     p.set("dir", c.dir === 1 ? "long" : "short");
     p.set("entry", fmtPx(c.entry)); p.set("sl", fmtPx(c.sl)); p.set("tp", fmtPx(c.tp));
     p.set("scan", JSON.stringify({ score: c.score, status: STATUS[c.status], ex: EX[$("exchange").value].name, s: c.s }));
+    p.set("lw", JSON.stringify({ ex: $("exchange").value, sym: c.sym, dir: c.dir, level: c.level, a1: +c.a1.toPrecision(8),
+                                 tr: c.tr, btcTr: c.btcTr, touches: c.touches, funding: c.funding }));
     return "index.html?" + p.toString() + "#sec-checklist";
   }
 
