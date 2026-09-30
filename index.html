@@ -445,6 +445,15 @@
     .calc-fields .row > div:empty{display:none}
     .calc-fields > .msg{grid-column:1 / -1; margin:0; order:-1}
   }
+
+  /* Coin currently loaded in the checklist */
+  .dchip.inchk{border:2px solid var(--blue); box-shadow:0 0 0 3px rgba(26,155,240,0.25), 0 0 18px rgba(26,155,240,0.45), 0 8px 28px rgba(0,0,0,0.45)}
+  .sc-card.inchk{border-color:var(--blue); box-shadow:0 0 0 2px rgba(26,155,240,0.6), 0 0 22px rgba(26,155,240,0.3)}
+  .chktag{display:none; align-items:center; gap:3px; font-size:10px; font-weight:800; letter-spacing:.4px; padding:1px 7px; border-radius:999px;
+     background:linear-gradient(90deg,var(--royal),var(--blue)); color:#fff; white-space:nowrap; flex-shrink:0}
+  .chktag svg{width:10px; height:10px}
+  .dchip.inchk .chktag{display:inline-flex; position:absolute; top:-9px; left:10px}
+  .sc-card.inchk .sc-top .chktag{display:inline-flex}
 </style>
 </head>
 <body>
@@ -834,7 +843,8 @@
   const num = id => { const v = parseFloat($(id).value); return isNaN(v) ? null : v; };
   const fmt$ = v => (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
   const fmtP = v => (v >= 0 ? "+" : "") + v.toFixed(2) + "%";
-  const fmtPx = v => { const d = v >= 100 ? 2 : v >= 1 ? 4 : 8; return Number(v.toFixed(d)).toString(); };
+  // Prices of 1 or more keep fixed decimals; smaller prices keep 6 significant digits (e.g. 0.000003783)
+  const fmtPx = v => { if (!isFinite(v)) return "-"; const a = Math.abs(v); if (a > 0 && a < 1) return String(Number(v.toPrecision(6))); return Number(v.toFixed(a >= 100 ? 2 : 4)).toString(); };
 
   function calculate(){
     const entry = num("entry"), sl = num("sl"), tp = num("tp");
@@ -1288,7 +1298,10 @@
   ["sizeBy","entryType","mode"].forEach(id => $(id).addEventListener("change", refresh));
   ["coin","entry","sl","tp","margin","lev","bal"].forEach(id => $(id).addEventListener("input", () => { $(id).classList.remove("missing"); updateSaveState(); }));
   $("coin").addEventListener("input", () => {
-    if (state.suggMeta && $("coin").value.trim().toUpperCase() !== state.suggMeta.coin) clearSugg();
+    if (state.suggMeta && $("coin").value.trim().toUpperCase() !== state.suggMeta.coin){
+      clearSugg();
+      if (window.MW && window.MW.scanner) window.MW.scanner.clearInChecklist();
+    }
   });
   $("minrr").addEventListener("change", () => {
     const v = parseFloat($("minrr").value);
@@ -1382,6 +1395,7 @@
     $("maker").value = "0"; $("taker").value = "0.02"; $("mmr").value = "0.1"; $("minrr").value = "1.5"; $("maxrisk").value = "1";
     $("sizeBy").value = "cost"; $("entryType").value = "limit"; $("mode").value = "cross";
     setDir("long"); toast("Reset");
+    if (window.MW && window.MW.scanner) window.MW.scanner.clearInChecklist();
   });
 
   // ---------------- SECTION NAVIGATION ----------------
@@ -1610,7 +1624,9 @@
 
   // ---------------- HELPERS ----------------
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
-  const fmtPx = v => { if (!isFinite(v)) return "-"; const a = Math.abs(v); const d = a >= 1000 ? 2 : a >= 10 ? 3 : a >= 1 ? 4 : a >= 0.01 ? 5 : 8; return Number(v.toFixed(d)).toString(); };
+  const fmtPx = v => { if (!isFinite(v)) return "-"; const a = Math.abs(v); if (a > 0 && a < 1) return String(Number(v.toPrecision(6))); const d = a >= 1000 ? 2 : a >= 10 ? 3 : 4; return Number(v.toFixed(d)).toString(); };
+  // Full-precision value sent to the calculator (never rounded for display)
+  const rawPx = v => String(Number((+v).toPrecision(12)));
   const fmtVol = v => v >= 1e9 ? "$" + (v/1e9).toFixed(2) + "B" : "$" + (v/1e6).toFixed(0) + "M";
   const pct = (v, d) => (v >= 0 ? "+" : "") + v.toFixed(d === undefined ? 2 : d) + "%";
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1968,6 +1984,7 @@
       const topN = Math.min(100, Math.max(1, parseInt($("topN").value, 10) || 10));
       $("topTitle").textContent = topN;
       stopAll();
+      inChkCard = null;
       renderResults(found.slice(0, topN));
       $("status").textContent = (btcNote ? btcNote.trim() + " " : "") + "Done. " + found.length + " coin" + (found.length === 1 ? "" : "s") + " near a level out of " + list.length + " scanned" + (fails ? " (" + fails + " failed to load)" : "") + ".";
       saveResults();
@@ -1995,7 +2012,7 @@
   // Data handed to the Checklist section when "Use in Checklist" is selected
   function useData(c){
     return { coin: c.base + "USDT", dir: c.dir === 1 ? "long" : "short",
-             entry: fmtPx(c.entry), sl: fmtPx(c.sl), tp: fmtPx(c.tp),
+             entry: rawPx(c.entry), sl: rawPx(c.sl), tp: rawPx(c.tp),
              scan: { score: c.score, status: STATUS[c.status], ex: EX[$("exchange").value].name, s: c.s } };
   }
 
@@ -2382,7 +2399,8 @@
   // Results saved by the old two-page version used links; turn them into buttons
   function upgradeLegacyCards(){
     $("results").querySelectorAll(".sc-card").forEach(card => {
-      card.classList.remove("watching");
+      card.classList.remove("watching", "inchk", "pulse");
+      card.querySelectorAll(".sc-top .chktag").forEach(t => t.remove());
       const lb = card.querySelector(".lvbox"); if (lb) lb.hidden = true;
       const a = card.querySelector("a.btn.primary");
       if (!a) return;
@@ -2412,13 +2430,27 @@
     }
     if (w && w.eval){                                   // latest live plan and suggestions
       const r = w.eval;
-      Object.assign(u, { entry: fmtPx(r.entry), sl: fmtPx(r.sl), tp: fmtPx(r.tp) });
+      Object.assign(u, { entry: rawPx(r.entry), sl: rawPx(r.sl), tp: rawPx(r.tp) });
       Object.assign(u.scan, { score: r.score, status: STATUS[r.status], s: r.s });
     }
     if (w && w.read) u.scan.live = w.read.stage + ", " + w.read.lean + " " + w.read.h + "–" + w.read.b;
     closeLSheet();
     if (window.MW && window.MW.checklist) window.MW.checklist.load(u);
+    setInChecklist(card);
   }
+  // Highlight the coin that is loaded in the checklist (its Scanner card and its live chip)
+  let inChkCard = null;
+  function setInChecklist(card){
+    if (inChkCard && inChkCard !== card){ inChkCard.classList.remove("inchk"); const t = inChkCard.querySelector(".sc-top .chktag"); if (t) t.remove(); }
+    inChkCard = card || null;
+    if (inChkCard){
+      inChkCard.classList.add("inchk");
+      const top = inChkCard.querySelector(".sc-top");
+      if (top && !top.querySelector(".chktag")){ const sp = document.createElement("span"); sp.innerHTML = '<span class="chktag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>IN CHECKLIST</span>'; top.insertBefore(sp.firstChild, top.querySelector(".scnum")); }
+    }
+    renderDock();
+  }
+  function clearInChecklist(){ if (inChkCard) setInChecklist(null); }
   $("results").addEventListener("click", e => {
     const b = e.target.closest && e.target.closest(".use-btn");
     if (b) useCard(b.closest(".sc-card"));
@@ -2452,6 +2484,7 @@
         ch.setAttribute("role", "button"); ch.tabIndex = 0;
         ch.innerHTML = '<div class="dtop"><span class="lwdot"></span><span class="dsym"></span><span class="ddir"></span>' +
                        '<span class="dstage"></span><span class="dlean"></span></div><div class="lbar"><i></i></div>' +
+                       '<span class="chktag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>IN CHECKLIST</span>' +
                        '<button type="button" class="dgo" title="Show in Scanner" aria-label="Show in Scanner">' +
                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></button>';
         ch.addEventListener("click", e => {
@@ -2471,6 +2504,7 @@
       q(".dstage").textContent = r ? r.stage : (w.err ? "Retrying" : "Loading"); q(".dstage").className = "dstage " + (r ? stageCls(r) : "");
       q(".dlean").innerHTML = r ? esc(r.lean.replace("Leaning ", "")) + '<span class="dcnt"> ' + r.h + "–" + r.b + '</span>' : ""; q(".dlean").className = "dlean " + (r ? leanCls(r) : "");
       q(".lbar i").style.left = (r ? r.pos * 100 : 50).toFixed(0) + "%";
+      ch.classList.toggle("inchk", !!inChkCard && w.card === inChkCard);
       ch.setAttribute("aria-label", shortSym(c.sym) + " " + (c.dir === 1 ? "long" : "short") + ", " + (r ? r.stage + ", " + r.lean : "loading") + ". Open details");
     });
     updateDockVis();
@@ -2534,6 +2568,8 @@
   window.MW.sheet.swipe($("lsheet"), $("lsheetBg"), closeLSheet);
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeLSheet(); });
 
+  window.MW = window.MW || {};
+  window.MW.scanner = { clearInChecklist };
   restoreResults();
   renderDock();
 
