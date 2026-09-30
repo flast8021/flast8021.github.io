@@ -182,6 +182,16 @@
   .plan b{color:#fff}
   .sc-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:10px; flex-wrap:wrap}
   .live-btn.on{border-color:var(--blue); color:#8fd3ff}
+  @keyframes flashv{0%{background:rgba(26,155,240,0.55); box-shadow:0 0 0 3px rgba(26,155,240,0.35)} 100%{background:transparent; box-shadow:0 0 0 3px transparent}}
+  .flash{animation:flashv 1.2s ease-out; border-radius:5px}
+  .lvbox{margin-top:8px; padding:9px 10px; border-radius:10px; background:rgba(26,155,240,0.07); border:1px solid rgba(26,155,240,0.35)}
+  .lvbox[hidden]{display:none}
+  .lvtitle{font-weight:700; letter-spacing:.5px; margin-bottom:6px; color:#8fd3ff}
+  .lvrow{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+  .lvcell .v{font-size:15px; font-weight:700; margin-top:2px}
+  .lvtag{font-size:11px; font-weight:700; padding:1px 7px; border-radius:999px; border:1px solid rgba(26,155,240,0.6); color:#8fd3ff; vertical-align:middle}
+  .lvtag.flip{border-color:rgba(245,158,11,0.7); color:var(--amber)}
+  @media (max-width:420px){ .lvrow{grid-template-columns:1fr} }
   body.live-off .live-btn{display:none}
   .sc-card.watching{border-color:rgba(26,155,240,0.7); box-shadow:0 0 0 1px rgba(26,155,240,0.25) inset}
   .live{margin-top:12px; padding:10px 12px; border-radius:10px; background:rgba(0,0,0,0.25); border:1px solid var(--border)}
@@ -201,6 +211,45 @@
   .switch input:checked + span::after{left:21px}
   .switch em{font-style:normal; color:var(--muted); font-size:12px}
   a.logo-link{display:inline-flex; flex-shrink:0}
+  .lwhybtn{display:none}
+
+  /* ---------- PHONE LAYOUT (desktop unchanged) ---------- */
+  @media (max-width:700px){
+    .wrap{padding:12px 10px 40px}
+    .brand-header{margin-bottom:10px; border-radius:10px}
+    .brand-header img{height:88px}
+    h1{font-size:21px}
+    .title-row img{width:34px; height:34px}
+    .sub{font-size:13px; margin-bottom:12px}
+    .card{padding:14px 12px; margin-bottom:12px; border-radius:12px}
+    .quicknav{gap:6px; margin:-4px 0 8px}
+    .qn{flex:1; text-align:center; padding:10px 6px; min-height:40px; font-size:14px}
+    a.qn{display:flex; align-items:center; justify-content:center}
+    input[type=text], input[type=number], select{font-size:16px; padding:11px 10px; min-height:44px}
+    .sgrid{grid-template-columns:1fr 1fr; gap:8px}
+    .sgrid > div:has(#liveToggle), .sgrid > div:has(#proxy){grid-column:1 / -1}
+    .btns .btn{flex:1 1 45%; min-height:46px}
+    .mkt{gap:6px}
+    .sc-card{padding:12px}
+    .sc-top{gap:8px}
+    .sym{font-size:17px}
+    .scnum{font-size:22px}
+    .sc-grid{grid-template-columns:1fr 1fr; gap:6px}
+    .sc-grid .box{padding:7px 8px}
+    .v{font-size:14px; word-break:break-word}
+    .plan{font-size:13px}
+    .sc-actions{gap:8px}
+    .sc-actions .btn{flex:1 1 0; min-height:46px; text-align:center; display:flex; align-items:center; justify-content:center}
+    .live{padding:10px}
+    .lbar{height:14px}
+    .lbar i{top:-4px; height:22px}
+    .lstat{font-size:13px; line-height:1.4}
+    .lwhy{display:none}
+    .live.showwhy .lwhy{display:block}
+    .lwhybtn{display:inline-block; margin-top:6px; padding:5px 12px; border-radius:999px; font-size:12px; cursor:pointer;
+       background:transparent; color:#8fd3ff; border:1px solid rgba(26,155,240,0.5)}
+    .toast{max-width:92vw; text-align:center}
+  }
   a.btn{text-decoration:none; display:inline-block}
   .empty{color:var(--muted); font-size:14px; text-align:center; padding:18px 0}
   .msg a{color:#8fd3ff}
@@ -231,9 +280,9 @@
           <option value="bybit">Bybit Perpetuals</option>
         </select>
       </div>
-      <div><label for="minVol">Min 24h volume ($M)</label><input type="number" id="minVol" min="0" step="1" value="10"></div>
-      <div><label for="topN">Results to show</label><input type="number" id="topN" min="1" max="100" step="1" value="10"></div>
-      <div><label for="maxCoins">Coins to scan</label><input type="number" id="maxCoins" min="5" max="100" step="5" value="40"></div>
+      <div><label for="minVol">Min 24h volume ($M)</label><input type="number" id="minVol" inputmode="numeric" min="0" step="1" value="10"></div>
+      <div><label for="topN">Results to show</label><input type="number" id="topN" inputmode="numeric" min="1" max="100" step="1" value="10"></div>
+      <div><label for="maxCoins">Coins to scan</label><input type="number" id="maxCoins" inputmode="numeric" min="5" max="100" step="5" value="40"></div>
       <div>
         <label for="dirMode">Direction</label>
         <select id="dirMode">
@@ -448,26 +497,9 @@
 
   function chg24(c4){ if (c4.length < 7) return 0; return (c4[c4.length - 1].c / c4[c4.length - 7].c - 1) * 100; }
 
-  function analyse(tk, c4raw, c1raw, c15raw, btc, dirMode){
-    const c4 = closedOnly(c4raw, "4h"), c1 = closedOnly(c1raw, "1h"), c15 = closedOnly(c15raw, "15m");
-    if (c4.length < 30 || c1.length < 60 || c15.length < 30) return null;
-    const price = tk.last, a1 = atr(c1, 14);
-    if (!(a1 > 0) || !(price > 0)) return null;
-    const tr = trendOf(c4);
-    const lv = levelsOf(c1, c4, a1);
-    const sup = lv.filter(l => l.p < price).sort((a, b) => b.p - a.p)[0];
-    const res = lv.filter(l => l.p > price).sort((a, b) => a.p - b.p)[0];
-    let dirs = tr === 1 ? [1] : tr === -1 ? [-1] : [1, -1];
-    if (dirMode === "long") dirs = dirs.filter(d => d === 1);
-    if (dirMode === "short") dirs = dirs.filter(d => d === -1);
-    const coinChg = chg24(c4), rs = coinChg - btc.chg;
-    let best = null;
-
-    dirs.forEach(dir => {
-      const level = dir === 1 ? sup : res;
-      if (!level) return;
-      const dist = Math.abs(price - level.p) / a1;
-      if (dist > 3) return;
+  // Evaluate one direction at one level. Used by the scan and by live watch.
+  function evalLevel(dir, level, price, a1, c15, lv, tr, btc, rs, funding){
+    const dist = Math.abs(price - level.p) / a1;
       const word = dir === 1 ? "support" : "resistance";
 
       // Sweep: wick through the level and close back, in the last 16 closed 15m candles
@@ -517,7 +549,7 @@
       const trendOk = tr === dir;
       const btcOk = btc.trend === dir, btcAgainst = btc.trend === -dir;
       const rsOk = dir * rs > 0;
-      const crowded = dir === 1 ? tk.funding > 0.0005 : tk.funding < -0.0005;
+      const crowded = dir === 1 ? funding > 0.0005 : funding < -0.0005;
       const fresh = level.touches <= 2;
 
       let score = 0;
@@ -556,9 +588,33 @@
       if (volX !== null) s.volume = volX >= 1.5 ? { v: true, r: "Sweep candle volume " + volX.toFixed(1) + "x average" }
                                                  : { v: false, r: "Sweep candle volume only " + volX.toFixed(1) + "x average" };
 
-      const cand = { sym: tk.sym, base: tk.base, dir, price, level: level.p, word, dist, tr, trendOk, sweep: sIdx >= 0, bos, fresh,
-                     volX, entry, sl, tp, rr, rs, coinChg, funding: tk.funding, crowded, btcOk, btcAgainst, vol: tk.vol, score, status, s,
-                     a1, btcTr: btc.trend, touches: level.touches };
+    return { dir, level: level.p, word, dist, tr, trendOk, sweep: sIdx >= 0, bos, fresh, volX, entry, sl, tp, rr, rs,
+             funding, crowded, btcOk, btcAgainst, score, status, s, a1, btcTr: btc.trend, btcChg: btc.chg, touches: level.touches,
+             lvls: lv.map(l => [+l.p.toPrecision(8), l.touches]) };
+  }
+
+  function analyse(tk, c4raw, c1raw, c15raw, btc, dirMode){
+    const c4 = closedOnly(c4raw, "4h"), c1 = closedOnly(c1raw, "1h"), c15 = closedOnly(c15raw, "15m");
+    if (c4.length < 30 || c1.length < 60 || c15.length < 30) return null;
+    const price = tk.last, a1 = atr(c1, 14);
+    if (!(a1 > 0) || !(price > 0)) return null;
+    const tr = trendOf(c4);
+    const lv = levelsOf(c1, c4, a1);
+    const sup = lv.filter(l => l.p < price).sort((a, b) => b.p - a.p)[0];
+    const res = lv.filter(l => l.p > price).sort((a, b) => a.p - b.p)[0];
+    let dirs = tr === 1 ? [1] : tr === -1 ? [-1] : [1, -1];
+    if (dirMode === "long") dirs = dirs.filter(d => d === 1);
+    if (dirMode === "short") dirs = dirs.filter(d => d === -1);
+    const coinChg = chg24(c4), rs = coinChg - btc.chg;
+    let best = null;
+
+    dirs.forEach(dir => {
+      const level = dir === 1 ? sup : res;
+      if (!level) return;
+      const dist = Math.abs(price - level.p) / a1;
+      if (dist > 3) return;
+      const r = evalLevel(dir, level, price, a1, c15, lv, tr, btc, rs, tk.funding);
+      const cand = Object.assign({ sym: tk.sym, base: tk.base, price, coinChg, vol: tk.vol }, r);
       if (!best || cand.score > best.score) best = cand;
     });
     return best;
@@ -675,28 +731,34 @@
     return "index.html?" + p.toString() + "#sec-checklist";
   }
 
+  const chipHtml = (on, txt) => '<span class="chk ' + (on === null ? "" : on ? "on" : "off") + '">' + (on ? "&#10003; " : on === false ? "&#10007; " : "") + txt + "</span>";
+  function chipsOf(c){
+    return [chipHtml(c.trendOk, "Trend"), chipHtml(c.dist <= 1, "At level"), chipHtml(c.sweep, "Sweep"), chipHtml(c.bos, "BOS"),
+      chipHtml(c.fresh, "Fresh level")].concat(c.volX !== null ? [chipHtml(c.volX >= 1.5, "Volume")] : [])
+      .concat([chipHtml(c.btcAgainst ? false : c.btcOk ? true : null, "BTC " + (c.btcOk ? "aligned" : c.btcAgainst ? "against" : "neutral"))]);
+  }
+  const fundHtml = c => (c.funding * 100).toFixed(4) + '%' + (c.crowded ? " crowded" : "");
+
   function renderResults(top){
     const box = $("results");
     if (!top.length){ box.innerHTML = '<div class="empty">No coins are near a support or resistance level right now. Try again later or lower the volume filter.</div>'; return; }
     box.innerHTML = top.map((c, i) => {
-      const chk = (on, txt) => '<span class="chk ' + (on === null ? "" : on ? "on" : "off") + '">' + (on ? "&#10003; " : on === false ? "&#10007; " : "") + txt + "</span>";
       const liveCfg = { ex: $("exchange").value, sym: c.sym, dir: c.dir, level: c.level, a1: c.a1, tr: c.tr, btcTr: c.btcTr,
-                        touches: c.touches, funding: c.funding, word: c.word };
+                        btcChg: c.btcChg, rs: c.rs, touches: c.touches, funding: c.funding, word: c.word, lvls: c.lvls };
       return '<div class="sc-card ' + (c.status === "ready" ? "ready" : c.status === "sweep" ? "sweep" : "") + '" data-live="' + esc(JSON.stringify(liveCfg)) + '">' +
         '<div class="sc-top"><span class="rank">#' + (i + 1) + '</span><span class="sym">' + esc(c.base) + 'USDT</span>' +
         '<span class="badge ' + (c.dir === 1 ? "long" : "short") + '">' + (c.dir === 1 ? "LONG" : "SHORT") + '</span>' +
         '<span class="pill ' + c.status + '">' + STATUS[c.status] + '</span>' +
         '<span class="scnum">' + c.score + ' <small>/100</small></span></div>' +
         '<div class="sc-grid">' +
-          '<div class="box"><div class="k">Price</div><div class="v">' + fmtPx(c.price) + '</div></div>' +
-          '<div class="box"><div class="k">' + (c.dir === 1 ? "Support" : "Resistance") + '</div><div class="v">' + fmtPx(c.level) + ' <small class="k">' + c.dist.toFixed(1) + ' ATR away</small></div></div>' +
-          '<div class="box"><div class="k">4H trend</div><div class="v">' + trendTxt(c.tr) + '</div></div>' +
-          '<div class="box"><div class="k">vs BTC (24h)</div><div class="v ' + (c.dir * c.rs > 0 ? "pos" : "neg") + '">' + pct(c.rs) + '</div></div>' +
-          '<div class="box"><div class="k">Funding</div><div class="v ' + (c.crowded ? "warn" : "") + '">' + (c.funding * 100).toFixed(4) + '%' + (c.crowded ? " crowded" : "") + '</div></div>' +
-          '<div class="box"><div class="k">24h volume</div><div class="v">' + fmtVol(c.vol) + '</div></div>' +
+          '<div class="box"><div class="k">Price</div><div class="v f-price">' + fmtPx(c.price) + '</div></div>' +
+          '<div class="box"><div class="k">' + (c.dir === 1 ? "Support" : "Resistance") + '</div><div class="v">' + fmtPx(c.level) + ' <small class="k f-dist">' + c.dist.toFixed(1) + ' ATR away</small></div></div>' +
+          '<div class="box"><div class="k">4H trend</div><div class="v f-trend">' + trendTxt(c.tr) + '</div></div>' +
+          '<div class="box"><div class="k">vs BTC (24h)</div><div class="v f-rs ' + (c.dir * c.rs > 0 ? "pos" : "neg") + '">' + pct(c.rs) + '</div></div>' +
+          '<div class="box"><div class="k">Funding</div><div class="v f-fund ' + (c.crowded ? "warn" : "") + '">' + fundHtml(c) + '</div></div>' +
+          '<div class="box"><div class="k">24h volume</div><div class="v f-vol">' + fmtVol(c.vol) + '</div></div>' +
         '</div>' +
-        '<div class="checks">' + chk(c.trendOk, "Trend") + chk(c.dist <= 1, "At level") + chk(c.sweep, "Sweep") + chk(c.bos, "BOS") +
-          chk(c.fresh, "Fresh level") + (c.volX !== null ? chk(c.volX >= 1.5, "Volume") : "") + chk(c.btcAgainst ? false : c.btcOk ? true : null, "BTC " + (c.btcOk ? "aligned" : c.btcAgainst ? "against" : "neutral")) + '</div>' +
+        '<div class="checks">' + chipsOf(c).join("") + '</div>' +
         '<div class="plan">Plan: Entry <b>' + fmtPx(c.entry) + '</b> &middot; SL <b>' + fmtPx(c.sl) + '</b> &middot; TP <b>' + fmtPx(c.tp) + '</b> &middot; R:R <b>1:' + c.rr.toFixed(2) + '</b></div>' +
         '<div class="sc-actions"><button type="button" class="btn live-btn">Watch live</button><a class="btn primary" href="' + esc(useLink(c)) + '">Use in Checklist &rarr;</a></div>' +
       '</div>';
@@ -736,20 +798,40 @@
       const j = await getJSON("https://contract.mexc.com/api/v1/contract/ticker?symbol=" + sym);
       let d = j && j.data; if (Array.isArray(d)) d = d.find(x => x.symbol === sym) || d[0];
       if (!d) throw new Error("No ticker");
-      return { last: +d.lastPrice, funding: +d.fundingRate };
+      return { last: +d.lastPrice, funding: +d.fundingRate, vol: +d.amount24 };
     },
     binance: async sym => {
       const j = await getJSON("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=" + sym);
-      const k = await getJSON("https://fapi.binance.com/fapi/v1/ticker/price?symbol=" + sym);
-      return { last: +k.price, funding: +j.lastFundingRate };
+      const k = await getJSON("https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=" + sym);
+      return { last: +k.lastPrice, funding: +j.lastFundingRate, vol: +k.quoteVolume };
     },
     bybit: async sym => {
       const j = await getJSON("https://api.bybit.com/v5/market/tickers?category=linear&symbol=" + sym);
       const d = j && j.result && j.result.list && j.result.list[0];
       if (!d) throw new Error("No ticker");
-      return { last: +d.lastPrice, funding: +d.fundingRate };
+      return { last: +d.lastPrice, funding: +d.fundingRate, vol: +d.turnover24h };
     }
   };
+
+  // Shared BTC data for all live watches: price every 60s, 4H candles every 15 min
+  const liveBTC = { ex: null, price: null, c4: null, tpx: 0, tc4: 0, busy: false };
+  const btcSymOf = ex => ex === "mexc" ? "BTC_USDT" : "BTCUSDT";
+  function chgFrom(price, c4){
+    const c = closedOnly(c4, "4h"); if (c.length < 7 || !isFinite(price)) return null;
+    return (price / c[c.length - 7].c - 1) * 100;          // same 6-candle window as the scan
+  }
+  async function refreshBTC(ex){
+    if (liveBTC.busy) return;
+    if (liveBTC.ex !== ex){ Object.assign(liveBTC, { ex, price: null, c4: null, tpx: 0, tc4: 0 }); }
+    const now = Date.now(), needPx = now - liveBTC.tpx >= 60000, need4 = now - liveBTC.tc4 >= 900000;
+    if (!needPx && !need4) return;
+    liveBTC.busy = true;
+    try {
+      if (needPx){ const t = await TICK1[ex](btcSymOf(ex)); liveBTC.price = t.last; liveBTC.tpx = Date.now(); }
+      if (need4){ liveBTC.c4 = await EX[ex].klines(btcSymOf(ex), "4h"); liveBTC.tc4 = Date.now(); }
+    } catch(e){ if (needPx) liveBTC.tpx = Date.now() - 45000; if (need4) liveBTC.tc4 = Date.now() - 840000; }
+    liveBTC.busy = false;
+  }
 
   function liveOn(){ return $("liveToggle").checked; }
   function setLiveUI(){
@@ -763,7 +845,7 @@
     if (!p){
       p = document.createElement("div"); p.className = "live";
       p.innerHTML = '<div class="lhead"><span>BREAK</span><span class="lstage"></span><span>HOLD</span></div>' +
-                    '<div class="lbar"><i></i></div><div class="lstat"></div><div class="lwhy"></div>';
+                    '<div class="lbar"><i></i></div><div class="lstat"></div><button type="button" class="lwhybtn">Why</button><div class="lwhy"></div>';
       card.insertBefore(p, card.querySelector(".sc-actions"));
     }
     return p;
@@ -775,8 +857,10 @@
     const key = cfg.ex + ":" + cfg.sym + ":" + cfg.dir;
     if (watches.has(key)){ stopWatch(key); return; }
     if (watches.size >= LIVE_MAX){ toast("Limit reached: " + LIVE_MAX + " coins at a time. Stop one to watch another.", 3000); return; }
-    const w = { key, cfg, card, btn, panel: panelOf(card), busy: false, t: { px: 0, c1: 0, c15: 0 }, price: null, funding: cfg.funding || 0,
-                c1: null, c15: null, updated: 0, err: "", read: null };
+    const w = { key, cfg, card, btn, panel: panelOf(card), busy: false, t: { px: 0, c1: 0, c15: 0, c4: 0 }, price: null, funding: cfg.funding || 0, vol: null, c4: null,
+                c1: null, c15: null, c1h: null, updated: 0, err: "", read: null };
+    w.t.c1h = 0;
+    lvBoxOf(card);
     w.panel.classList.remove("stopped"); w.panel.hidden = false;
     btn.textContent = "Stop live"; btn.classList.add("on");
     card.classList.add("watching");
@@ -792,6 +876,7 @@
     w.btn.textContent = "Watch live"; w.btn.classList.remove("on");
     w.card.classList.remove("watching");
     w.panel.classList.add("stopped");
+    const lb = w.card.querySelector(".lvbox"); if (lb) lb.hidden = true;
     const st = w.panel.querySelector(".lstat");
     if (st) st.textContent = (w.read ? st.textContent.replace(/ · updated .*$/, "") + " · " : "") + "stopped";
     if (!watches.size && liveTimer){ clearInterval(liveTimer); liveTimer = null; }
@@ -799,21 +884,25 @@
 
   function liveTick(){
     const now = Date.now();
+    const first = watches.values().next().value;
+    if (first) refreshBTC(first.cfg.ex);
     watches.forEach(w => {
       if (w.busy){ renderAge(w); return; }
-      const need = { px: now - w.t.px >= 3000, c1: now - w.t.c1 >= 10000, c15: now - w.t.c15 >= 60000 };
-      if (!need.px && !need.c1 && !need.c15){ renderAge(w); return; }
+      const need = { px: now - w.t.px >= 3000, c1: now - w.t.c1 >= 10000, c15: now - w.t.c15 >= 60000, c4: now - w.t.c4 >= 900000, c1h: now - w.t.c1h >= 900000 };
+      if (!need.px && !need.c1 && !need.c15 && !need.c4 && !need.c1h){ renderAge(w); return; }
       w.busy = true;
       (async () => {
         const ex = EX[w.cfg.ex];
         try {
-          if (need.px){ const t = await TICK1[w.cfg.ex](w.cfg.sym); w.price = t.last; if (isFinite(t.funding)) w.funding = t.funding; w.t.px = Date.now(); }
+          if (need.px){ const t = await TICK1[w.cfg.ex](w.cfg.sym); w.price = t.last; if (isFinite(t.funding)) w.funding = t.funding; if (t.vol > 0) w.vol = t.vol; w.t.px = Date.now(); }
           if (need.c1){ w.c1 = await ex.klines(w.cfg.sym, "1m"); w.t.c1 = Date.now(); }
           if (need.c15){ w.c15 = await ex.klines(w.cfg.sym, "15m"); w.t.c15 = Date.now(); }
+          if (need.c4){ try { w.c4 = await ex.klines(w.cfg.sym, "4h"); } catch(e){} w.t.c4 = Date.now(); }
+          if (need.c1h){ try { w.c1h = await ex.klines(w.cfg.sym, "1h"); } catch(e){} w.t.c1h = Date.now(); }
           w.err = ""; w.updated = Date.now();
         } catch(e){ w.err = "Connection issue, retrying"; }
         w.busy = false;
-        if (watches.get(w.key) === w){ w.read = liveRead(w); renderLive(w); }
+        if (watches.get(w.key) === w){ try { liveCard(w); } catch(e){} w.read = liveRead(w); renderLive(w); }
       })();
     });
   }
@@ -836,8 +925,9 @@
     const atLevel = touchIdx.length;
 
     // 1. 4H trend and BTC (from the scan)
-    if (w.cfg.tr === d) H.push("4H trend with you"); else if (w.cfg.tr === -d) B.push("4H trend against you");
-    if (w.cfg.btcTr === d) H.push("BTC aligned"); else if (w.cfg.btcTr === -d) B.push("BTC against");
+    const trN = w.liveTr !== undefined ? w.liveTr : w.cfg.tr, btN = w.liveBtcTr !== undefined ? w.liveBtcTr : w.cfg.btcTr;
+    if (trN === d) H.push("4H trend with you"); else if (trN === -d) B.push("4H trend against you");
+    if (btN === d) H.push("BTC aligned"); else if (btN === -d) B.push("BTC against");
     // 2. Level freshness
     if (w.cfg.touches <= 2) H.push("Fresh level"); else B.push("Level tested " + w.cfg.touches + " times");
     // 3. 15m closes
@@ -888,6 +978,96 @@
     return { H, B, h, b, lean, stage, distR, pos: h + b ? h / (h + b) : 0.5 };
   }
 
+  function flash(el){ el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
+  function setF(el, html, cls){
+    if (!el) return;
+    const keep = el.classList.contains("flash");
+    if (cls !== undefined) el.className = cls + (keep ? " flash" : "");
+    if (el.innerHTML !== html){ el.innerHTML = html; flash(el); }
+  }
+  function lvBoxOf(card){
+    let b = card.querySelector(".lvbox");
+    if (!b){
+      b = document.createElement("div"); b.className = "lvbox"; b.hidden = true;
+      b.innerHTML = '<div class="k lvtitle">Live levels</div><div class="lvrow"><div class="lvcell"><div class="k lv1k"></div><div class="v lv1"></div></div>' +
+                    '<div class="lvcell"><div class="k lv2k"></div><div class="v lv2"></div></div></div>';
+      const after = card.querySelector(".checks");
+      card.insertBefore(b, after);
+    }
+    return b;
+  }
+  function renderLevels(w, lv){
+    const cfg = w.cfg, b = lvBoxOf(w.card), a = cfg.a1, price = w.price;
+    const below = lv.filter(l => l.p < price).sort((x, y) => y.p - x.p)[0];
+    const above = lv.filter(l => l.p > price).sort((x, y) => x.p - y.p)[0];
+    const near = (l, ref) => l && Math.abs(l.p - ref) <= 0.35 * a;
+    const cell = (l, kind) => {
+      if (!l) return '<span class="k">None found' + ((cfg.dir === 1) === (kind === "res") ? ", TP set at 2R" : "") + '</span>';
+      const dist = Math.abs(price - l.p) / a;
+      // Watched level now on the wrong side of price = flipped (support became resistance, or the reverse)
+      const flipped = near(l, cfg.level) && ((cfg.dir === 1 && kind === "res") || (cfg.dir === -1 && kind === "sup"));
+      const watched = near(l, cfg.level) && !flipped;
+      return fmtPx(l.p) + ' <small class="k">' + dist.toFixed(1) + ' ATR · ' + l.touches + ' test' + (l.touches > 1 ? "s" : "") + '</small>' +
+             (flipped ? ' <span class="lvtag flip">Flipped</span>' : watched ? ' <span class="lvtag">Watched</span>' : '');
+    };
+    // LONG: support first (where it should hold), resistance second (target). SHORT: the reverse.
+    const first = cfg.dir === 1 ? ["Support below", cell(below, "sup")] : ["Resistance above", cell(above, "res")];
+    const second = cfg.dir === 1 ? ["Resistance above (target)", cell(above, "res")] : ["Support below (target)", cell(below, "sup")];
+    b.querySelector(".lv1k").textContent = first[0]; b.querySelector(".lv2k").textContent = second[0];
+    setF(b.querySelector(".lv1"), first[1]); setF(b.querySelector(".lv2"), second[1]);
+    b.hidden = !watches.has(w.key);
+  }
+
+  function liveCard(w){
+    const cfg = w.cfg, card = w.card, q = s => card.querySelector(s);
+    if (!isFinite(w.price)) return;
+    setF(q(".f-price"), fmtPx(w.price));
+    if (w.vol > 0) setF(q(".f-vol"), fmtVol(w.vol));
+    if (w.c4 && closedOnly(w.c4, "4h").length >= 30) w.liveTr = trendOf(closedOnly(w.c4, "4h"));
+    if (liveBTC.c4 && closedOnly(liveBTC.c4, "4h").length >= 30) w.liveBtcTr = trendOf(closedOnly(liveBTC.c4, "4h"));
+    const tr = w.liveTr !== undefined ? w.liveTr : cfg.tr;
+    if (cfg.sym === btcSymOf(cfg.ex)) liveBTC.price = w.price;     // watching BTC itself: keep both in sync
+    const btcChg = liveBTC.c4 ? chgFrom(liveBTC.price, liveBTC.c4) : null;
+    const btc = { trend: w.liveBtcTr !== undefined ? w.liveBtcTr : cfg.btcTr, chg: btcChg !== null ? btcChg : cfg.btcChg };
+    const coinChg = w.c4 ? chgFrom(w.price, w.c4) : null;
+    const rs = coinChg !== null && btcChg !== null ? coinChg - btcChg : cfg.rs;
+    if (!cfg.lvls || !w.c15 || !(cfg.a1 > 0)){
+      if (cfg.a1 > 0) setF(q(".f-dist"), (Math.abs(w.price - cfg.level) / cfg.a1).toFixed(1) + " ATR away");
+      return;
+    }
+    const c15 = closedOnly(w.c15, "15m");
+    if (c15.length < 20) return;
+    let lv = cfg.lvls.map(x => ({ p: x[0], touches: x[1] }));
+    const h1 = w.c1h ? closedOnly(w.c1h, "1h") : null, h4 = w.c4 ? closedOnly(w.c4, "4h") : null;
+    if (h1 && h4 && h1.length >= 60 && h4.length >= 30){ const nl = levelsOf(h1, h4, cfg.a1); if (nl.length) lv = nl; }
+    renderLevels(w, lv);
+    const r = evalLevel(cfg.dir, { p: cfg.level, touches: cfg.touches }, w.price, cfg.a1, c15, lv, tr, btc, rs, w.funding);
+    const pill = q(".pill");
+    if (pill && pill.textContent !== STATUS[r.status]){ pill.className = "pill " + r.status; pill.textContent = STATUS[r.status]; flash(pill); }
+    setF(q(".scnum"), r.score + ' <small>/100</small>', "scnum");
+    card.classList.toggle("ready", r.status === "ready");
+    card.classList.toggle("sweep", r.status === "sweep");
+    setF(q(".f-dist"), r.dist.toFixed(1) + " ATR away");
+    setF(q(".f-trend"), trendTxt(r.tr));
+    if (isFinite(r.rs)) setF(q(".f-rs"), pct(r.rs), "v f-rs " + (r.dir * r.rs > 0 ? "pos" : "neg"));
+    setF(q(".f-fund"), fundHtml(r), "v f-fund " + (r.crowded ? "warn" : ""));
+    const box = q(".checks"), chips = chipsOf(r);
+    if (box){
+      if (box.children.length !== chips.length){ box.innerHTML = chips.join(""); flash(box); }
+      else chips.forEach((h, i) => {
+        const old = box.children[i];
+        const tmp = document.createElement("div"); tmp.innerHTML = h; const nw = tmp.firstChild;
+        if (old.className.replace(/\s*flash/, "") !== nw.className || old.textContent !== nw.textContent){ box.replaceChild(nw, old); flash(nw); }
+      });
+    }
+    const plan = q(".plan");
+    if (plan){
+      const vals = [fmtPx(r.entry), fmtPx(r.sl), fmtPx(r.tp), "1:" + r.rr.toFixed(2)];
+      const bs = plan.querySelectorAll("b");
+      if (bs.length === 4) vals.forEach((v, i) => { if (bs[i].textContent !== v){ bs[i].textContent = v; flash(bs[i]); } });
+    }
+  }
+
   function ago(ts){ const s = Math.max(0, Math.round((Date.now() - ts) / 1000)); return s < 60 ? s + "s ago" : Math.round(s / 60) + " min ago"; }
   function renderAge(w){
     const st = w.panel.querySelector(".lstat");
@@ -896,7 +1076,6 @@
   function renderLive(w){
     const p = w.panel, r = w.read;
     const stage = p.querySelector(".lstage"), st = p.querySelector(".lstat"), why = p.querySelector(".lwhy"), mk = p.querySelector(".lbar i");
-    if (w.price){ const pv = w.card.querySelector(".sc-grid .box .v"); if (pv) pv.textContent = fmtPx(w.price); }
     if (!r){
       stage.textContent = "Loading"; stage.className = "lstage";
       st.textContent = w.err || "Fetching live data..."; why.textContent = ""; mk.style.left = "50%"; return;
@@ -922,6 +1101,10 @@
     }
   }
 
+  $("results").addEventListener("click", e => {
+    const wb = e.target.closest && e.target.closest(".lwhybtn");
+    if (wb){ const lv = wb.closest(".live"); lv.classList.toggle("showwhy"); wb.textContent = lv.classList.contains("showwhy") ? "Hide" : "Why"; return; }
+  });
   $("results").addEventListener("click", e => {
     const btn = e.target.closest && e.target.closest(".live-btn");
     if (!btn) return;
