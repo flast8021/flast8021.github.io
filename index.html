@@ -110,6 +110,53 @@
   .cpy svg{width:15px; height:15px}
   .cpy.done{color:var(--green)}
   .mbar{display:none}
+  /* Bottom sheets: slide up on open, slide down on close */
+  .rsheet-bg{position:fixed; inset:0; z-index:40; background:rgba(0,0,0,0.55); opacity:0; transition:opacity .28s ease}
+  .rsheet-bg.show{opacity:1}
+  .rsheet-bg[hidden], .rsheet[hidden]{display:none}
+  .rsheet{position:fixed; left:0; right:0; bottom:0; margin:0 auto; max-width:640px; z-index:41; max-height:78vh; overflow-y:auto;
+     padding:8px 14px calc(16px + env(safe-area-inset-bottom)); border-radius:16px 16px 0 0;
+     background:#06203a; border:1px solid var(--border); border-bottom:none; box-shadow:0 -10px 30px rgba(0,0,0,0.5);
+     transform:translateY(100%); transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+  .rsheet.show{transform:none}
+  .rsheet-grip{width:40px; height:4px; border-radius:4px; background:rgba(255,255,255,0.25); margin:2px auto 10px}
+  .rsheet .risk{margin-top:0; animation:none}
+  /* Live data bar */
+  .lwbar{position:fixed; z-index:31; left:0; right:0; bottom:12px; margin:0 auto; max-width:760px; cursor:pointer;
+     padding:8px 12px 10px; border-radius:12px; background:rgba(3,19,35,0.96); border:1px solid rgba(26,155,240,0.55);
+     box-shadow:0 -4px 20px rgba(0,0,0,0.4); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px)}
+  .lwbar[hidden]{display:none}
+  .lwbar:hover{border-color:var(--blue)}
+  .lwtop{display:flex; align-items:center; gap:8px; font-size:12px; margin-bottom:6px; white-space:nowrap; overflow:hidden}
+  .lwdot{width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); flex-shrink:0; animation:lwpulse 1.6s infinite}
+  @keyframes lwpulse{50%{opacity:.35}}
+  .lwsym{font-weight:800}
+  .lwstage{font-weight:600; overflow:hidden; text-overflow:ellipsis}
+  .lwlean{font-weight:800}
+  .lwage{margin-left:auto; color:var(--muted)}
+  .lbar{position:relative; height:10px; border-radius:10px; background:linear-gradient(90deg, var(--red), var(--amber) 50%, var(--green))}
+  .lbar i{position:absolute; top:-4px; left:50%; width:6px; height:18px; border-radius:4px; background:#fff; transform:translateX(-50%);
+     box-shadow:0 0 8px rgba(255,255,255,0.7); transition:left .5s ease}
+  .lhead{display:flex; justify-content:space-between; align-items:center; font-size:11px; font-weight:700; letter-spacing:1px; color:var(--muted); margin:10px 0 5px}
+  .lstage{font-size:13px; letter-spacing:.3px; color:var(--text)}
+  .lstage.pos{color:var(--green)} .lstage.neg{color:var(--red)}
+  body.has-lw .wrap{padding-bottom:130px}
+  body.has-lw .toast{bottom:90px}
+  .lshead{display:flex; align-items:center; gap:8px; font-size:18px}
+  .lshead .k{margin-left:auto; font-size:12px}
+  .badge{font-size:12px; font-weight:800; padding:3px 9px; border-radius:6px}
+  .badge.long{background:var(--green); color:#04130a} .badge.short{background:var(--red); color:#1a0505}
+  .lsline{font-size:13px; margin-top:8px}
+  .lsgrid{margin-top:10px}
+  .lscols{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px}
+  .lst{font-weight:700; margin-bottom:4px}
+  .lsl{margin:0; padding-left:16px; font-size:13px; line-height:1.5}
+  .lsfoot{margin-top:10px}
+  .rsheet .k{font-size:12px; color:var(--muted)}
+  .rsheet .lst{font-size:14px}
+  .rsheet .lst.pos{color:var(--green)} .rsheet .lst.neg{color:var(--red)}
+  .lsstop{border-color:rgba(239,68,68,0.6); color:#fca5a5}
+  a.btn{text-decoration:none; display:inline-flex; align-items:center; justify-content:center}
 
   /* ---------- PHONE LAYOUT (desktop unchanged) ---------- */
   @media (max-width:700px){
@@ -168,15 +215,9 @@
     .mrisk.amber{border-color:rgba(245,158,11,0.7)} .mrisk.amber .ico{background:var(--amber); box-shadow:0 0 8px var(--amber)}
     .mrisk.green{border-color:rgba(34,197,94,0.6)} .mrisk.green .ico{background:var(--green); box-shadow:0 0 8px var(--green)}
     .mrisk.info .ico{background:var(--blue)}
-    .rsheet-bg{position:fixed; inset:0; z-index:40; background:rgba(0,0,0,0.55)}
-    .rsheet-bg[hidden], .rsheet[hidden]{display:none}
-    .rsheet{position:fixed; left:0; right:0; bottom:0; z-index:41; max-height:75vh; overflow-y:auto;
-       padding:8px 14px calc(16px + env(safe-area-inset-bottom)); border-radius:16px 16px 0 0;
-       background:#06203a; border:1px solid var(--border); border-bottom:none; box-shadow:0 -10px 30px rgba(0,0,0,0.5);
-       animation:rsheetUp .22s ease-out}
-    @keyframes rsheetUp{from{transform:translateY(100%)} to{transform:none}}
-    .rsheet-grip{width:40px; height:4px; border-radius:4px; background:rgba(255,255,255,0.25); margin:2px auto 10px}
-    .rsheet .risk{margin-top:0; animation:none}
+    body.has-lw .wrap{padding-bottom:170px}
+    body.has-lw .toast{bottom:150px}
+    .lwbar{bottom:calc(64px + env(safe-area-inset-bottom)); left:0; right:0; max-width:none; border-radius:12px 12px 0 0; border-bottom:none}
   }
   .risk{margin-top:14px; border-radius:12px; border:1px solid var(--border); background:rgba(3,19,35,0.55);
      padding:12px 14px; animation:riskIn .25s ease-out}
@@ -398,6 +439,15 @@
   <button type="button" class="mrisk" id="mRisk" hidden aria-haspopup="dialog"><i class="ico"></i><span id="mRiskTxt">Risk</span></button>
   <button type="button" class="btn" id="mCopy">Copy</button>
   <button type="button" class="btn primary" id="mSave">Save</button>
+</div>
+<div class="lwbar" id="lwBar" role="button" tabindex="0" aria-label="Live data, tap for details" hidden>
+  <div class="lwtop"><span class="lwdot"></span><span class="lwsym" id="lwSym"></span><span class="lwstage" id="lwStage"></span><span class="lwlean" id="lwLean"></span><span class="lwage" id="lwAge"></span></div>
+  <div class="lbar"><i id="lwMark"></i></div>
+</div>
+<div class="rsheet-bg" id="lsheetBg" hidden></div>
+<div class="rsheet" id="lsheet" role="dialog" aria-label="Live data" hidden>
+  <div class="rsheet-grip"></div>
+  <div id="lsheetBody"></div>
 </div>
 <div class="rsheet-bg" id="rsheetBg" hidden></div>
 <div class="rsheet" id="rsheet" role="dialog" aria-label="Risk check" hidden>
@@ -1003,6 +1053,7 @@
     if (confirm("Delete all saved trades from this browser?")){ setLog([]); renderLog(); toast("Log cleared"); }
   });
   $("btnReset").addEventListener("click", () => {
+    stopLive(true);
     state.answers = {};
     clearSugg(true);
     ["coin","entry","sl","tp","margin","lev","slip","actual"].forEach(id => { $(id).value = ""; $(id).classList.remove("missing"); });
@@ -1069,6 +1120,8 @@
     state.suggMeta = { coin, dir, score: meta.score, status: meta.status, ex: meta.ex, live: typeof meta.live === "string" ? meta.live.slice(0, 80) : "" };
     try { history.replaceState(null, "", location.pathname + location.hash); } catch(e){}
     refresh(); renderSuggBanner();
+    let lcfg = null; try { lcfg = validLiveCfg(JSON.parse(p.get("lw") || "null")); } catch(e){}
+    if (lcfg && liveAllowed()) setTimeout(() => startLive(lcfg), 0);
     toast("Loaded " + coin + " " + dir.toUpperCase() + " from Scanner. Add margin and leverage in the calculator.", 3500);
     setTimeout(() => goTo("sec-checklist"), 50);
   }
@@ -1090,6 +1143,311 @@
     wrap.appendChild(b);
   });
 
+  // ---------------- BOTTOM SHEETS (slide up / slide down) ----------------
+  function openSheet(bg, sh){
+    clearTimeout(sh._t);
+    bg.hidden = false; sh.hidden = false;
+    requestAnimationFrame(() => requestAnimationFrame(() => { bg.classList.add("show"); sh.classList.add("show"); }));
+  }
+  function closeSheet(bg, sh){
+    if (sh.hidden) return;
+    bg.classList.remove("show"); sh.classList.remove("show");
+    clearTimeout(sh._t);
+    sh._t = setTimeout(() => { if (!sh.classList.contains("show")){ bg.hidden = true; sh.hidden = true; } }, 300);
+  }
+  const sheetOpen = sh => !sh.hidden && sh.classList.contains("show");
+
+  // ---------------- LIVE DATA FROM SCANNER ----------------
+  const LW_KEY = "mwChecklistLive";
+  const LWX = (() => {
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    const DEFAULT_PROXY = "https://mw-scanner.flast8021.workers.dev";
+    function proxyVal(){ try { return String(JSON.parse(localStorage.getItem("mwScannerSettings") || "{}").proxy || ""); } catch(e){ return ""; } }
+    async function getJSON(url){
+      let proxy = proxyVal().trim().replace(/\/?\?url=.*$/i, "").replace(/\/+$/, "");
+      if (!proxy && url.indexOf("contract.mexc.com") !== -1) proxy = DEFAULT_PROXY;
+      const target = proxy ? proxy + "/?url=" + encodeURIComponent(url) : url;
+      const r = await fetch(target, { cache: "no-store" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }
+  const TF = {
+    "4h":  { mexc:"Hour4", binance:"4h",  bybit:"240", sec:14400, n:150 },
+    "1h":  { mexc:"Min60", binance:"1h",  bybit:"60",  sec:3600,  n:240 },
+    "15m": { mexc:"Min15", binance:"15m", bybit:"15",  sec:900,   n:100 },
+    "1m":  { mexc:"Min1",  binance:"1m",  bybit:"1",   sec:60,    n:120 }
+  };
+  const EX = {
+    mexc: {
+      name: "MEXC Futures",
+      async tickers(){
+        const j = await getJSON("https://contract.mexc.com/api/v1/contract/ticker");
+        if (!j || !Array.isArray(j.data)) throw new Error("Unexpected MEXC response");
+        return j.data.filter(t => /_USDT$/.test(t.symbol)).map(t => ({
+          sym: t.symbol, base: t.symbol.replace(/_USDT$/, ""), last: +t.lastPrice, vol: +t.amount24,
+          chg: +t.riseFallRate * 100, funding: +t.fundingRate, bid: +t.bid1, ask: +t.ask1 }));
+      },
+      async klines(sym, tf){
+        const base = "https://contract.mexc.com/api/v1/contract/kline/" + sym + "?interval=" + TF[tf].mexc;
+        const start = Math.floor(Date.now() / 1000) - TF[tf].n * TF[tf].sec;
+        const parse = j => {
+          if (j && j.success === false) throw new Error("MEXC: " + (j.message || j.msg || ("code " + j.code)));
+          const d = j && j.data;
+          if (d && Array.isArray(d.time) && d.time.length)
+            return d.time.map((t, i) => ({ t: t * 1000, o: +d.open[i], h: +d.high[i], l: +d.low[i], c: +d.close[i], v: +d.vol[i] }));
+          if (Array.isArray(d) && d.length)
+            return d.map(k => Array.isArray(k)
+              ? { t: +k[0] * (k[0] < 1e12 ? 1000 : 1), o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }
+              : { t: +k.time * (k.time < 1e12 ? 1000 : 1), o: +k.open, h: +k.high, l: +k.low, c: +k.close, v: +k.vol });
+          return null;
+        };
+        let out = null;
+        try { out = parse(await getJSON(base + "&start=" + start)); } catch(e){ if (/^MEXC:/.test(e.message)) throw e; }
+        if (!out){ await sleep(250); out = parse(await getJSON(base)); }
+        if (!out) throw new Error("MEXC returned no candles for " + sym + " (" + TF[tf].mexc + ")");
+        return out.slice(-TF[tf].n);
+      }
+    },
+    binance: {
+      name: "Binance Futures",
+      async tickers(){
+        const [t24, prem, book] = await Promise.all([
+          getJSON("https://fapi.binance.com/fapi/v1/ticker/24hr"),
+          getJSON("https://fapi.binance.com/fapi/v1/premiumIndex"),
+          getJSON("https://fapi.binance.com/fapi/v1/ticker/bookTicker")
+        ]);
+        const fr = {}; prem.forEach(p => fr[p.symbol] = +p.lastFundingRate);
+        const bk = {}; book.forEach(b => bk[b.symbol] = b);
+        return t24.filter(t => /^[A-Z0-9]+USDT$/.test(t.symbol)).map(t => ({
+          sym: t.symbol, base: t.symbol.replace(/USDT$/, ""), last: +t.lastPrice, vol: +t.quoteVolume,
+          chg: +t.priceChangePercent, funding: fr[t.symbol] || 0,
+          bid: bk[t.symbol] ? +bk[t.symbol].bidPrice : 0, ask: bk[t.symbol] ? +bk[t.symbol].askPrice : 0 }));
+      },
+      async klines(sym, tf){
+        const j = await getJSON("https://fapi.binance.com/fapi/v1/klines?symbol=" + sym + "&interval=" + TF[tf].binance + "&limit=" + TF[tf].n);
+        return j.map(k => ({ t: +k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
+      }
+    },
+    bybit: {
+      name: "Bybit Perpetuals",
+      async tickers(){
+        const j = await getJSON("https://api.bybit.com/v5/market/tickers?category=linear");
+        const list = j && j.result && j.result.list;
+        if (!Array.isArray(list)) throw new Error("Unexpected Bybit response");
+        return list.filter(t => /^[A-Z0-9]+USDT$/.test(t.symbol)).map(t => ({
+          sym: t.symbol, base: t.symbol.replace(/USDT$/, ""), last: +t.lastPrice, vol: +t.turnover24h,
+          chg: +t.price24hPcnt * 100, funding: +t.fundingRate, bid: +t.bid1Price, ask: +t.ask1Price }));
+      },
+      async klines(sym, tf){
+        const j = await getJSON("https://api.bybit.com/v5/market/kline?category=linear&symbol=" + sym + "&interval=" + TF[tf].bybit + "&limit=" + TF[tf].n);
+        const list = j && j.result && j.result.list;
+        if (!Array.isArray(list)) throw new Error("No candles");
+        return list.slice().reverse().map(k => ({ t: +k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
+      }
+    }
+  };
+
+  const closedOnly = (c, tf) => c.filter(k => k.t + TF[tf].sec * 1000 <= Date.now());
+
+  const TICK1 = {
+    mexc: async sym => {
+      const j = await getJSON("https://contract.mexc.com/api/v1/contract/ticker?symbol=" + sym);
+      let d = j && j.data; if (Array.isArray(d)) d = d.find(x => x.symbol === sym) || d[0];
+      if (!d) throw new Error("No ticker");
+      return { last: +d.lastPrice, funding: +d.fundingRate, vol: +d.amount24 };
+    },
+    binance: async sym => {
+      const j = await getJSON("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=" + sym);
+      const k = await getJSON("https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=" + sym);
+      return { last: +k.lastPrice, funding: +j.lastFundingRate, vol: +k.quoteVolume };
+    },
+    bybit: async sym => {
+      const j = await getJSON("https://api.bybit.com/v5/market/tickers?category=linear&symbol=" + sym);
+      const d = j && j.result && j.result.list && j.result.list[0];
+      if (!d) throw new Error("No ticker");
+      return { last: +d.lastPrice, funding: +d.fundingRate, vol: +d.turnover24h };
+    }
+  };
+
+  function liveRead(w){
+    if (!w.c1 || !w.c15 || !isFinite(w.price)) return null;
+    const d = w.cfg.dir, L = w.cfg.level, a = w.cfg.a1, price = w.price;
+    const b1 = closedOnly(w.c1, "1m").slice(-60), b15 = closedOnly(w.c15, "15m").slice(-8);
+    if (b1.length < 20 || !(a > 0)) return null;
+    const ext = b => d === 1 ? L - b.l : b.h - L;          // how far the wick went beyond the level
+    const cls = b => (L - b.c) * d;                         // how far the close is beyond the level
+    const room = b => d === 1 ? b.h - L : L - b.l;          // distance on the right side
+    const distR = (price - L) * d / a;
+    const H = [], B = [];
+
+    // Touches in the last hour
+    const touchIdx = b1.map((b, i) => ext(b) >= -0.15 * a ? i : -1).filter(i => i >= 0);
+    const touched = touchIdx.length > 0;
+    const lastTouch = touched ? touchIdx[touchIdx.length - 1] : -1;
+    const atLevel = touchIdx.length;
+
+    // 1. 4H trend and BTC (from the scan)
+    const trN = w.liveTr !== undefined ? w.liveTr : w.cfg.tr, btN = w.liveBtcTr !== undefined ? w.liveBtcTr : w.cfg.btcTr;
+    if (trN === d) H.push("4H trend with you"); else if (trN === -d) B.push("4H trend against you");
+    if (btN === d) H.push("BTC aligned"); else if (btN === -d) B.push("BTC against");
+    // 2. Level freshness
+    if (w.cfg.touches <= 2) H.push("Fresh level"); else B.push("Level tested " + w.cfg.touches + " times");
+    // 3. 15m closes
+    let acc = 0; for (let i = b15.length - 1; i >= 0 && cls(b15[i]) > 0.05 * a; i--) acc++;
+    if (acc >= 2){ B.push("2+ 15m closes beyond"); B.push("Acceptance beyond level"); }
+    else if (acc === 1) B.push("15m close beyond");
+    if (b15.some(b => ext(b) > 0.02 * a && cls(b) <= 0)) H.push("15m sweep closed back");
+    // 4. 1m closes vs wicks
+    const r15 = b1.slice(-15), r30 = b1.slice(-30);
+    const cb1 = r15.filter(b => cls(b) > 0.05 * a).length;
+    const wb1 = r30.filter(b => ext(b) > 0.02 * a && cls(b) <= 0).length;
+    if (cb1 >= 8) B.push("1m holding beyond level");
+    else if (wb1 >= 2 && cb1 <= 3) H.push("1m wicks rejected");
+    // 5. Volume
+    const avgV = b1.reduce((s, b) => s + b.v, 0) / b1.length;
+    let hv = 0, bv = 0;
+    r30.forEach(b => { if (b.v > 1.8 * avgV){ if (cls(b) > 0) bv++; else if (ext(b) > 0) hv++; } });
+    if (hv > bv) H.push("Volume on rejection wicks"); else if (bv > hv) B.push("Volume on closes beyond");
+    // 6. Bounce / beyond
+    if (touched && distR >= 0.5) H.push("Bounced " + distR.toFixed(1) + " ATR");
+    if (distR <= -0.3) B.push("Trading " + Math.abs(distR).toFixed(1) + " ATR beyond");
+    // 7. Approach: fast spike vs slow grind
+    const ref = lastTouch >= 0 ? lastTouch : b1.length - 1;
+    if (touched && ref >= 10 && room(b1[ref - 10]) >= 0.8 * a) H.push("Fast move into level");
+    if (ref >= 30){
+      const pk = [0, 1, 2].map(k => Math.max(...b1.slice(ref - 30 + k * 10, ref - 20 + k * 10).map(room)));
+      if (pk[0] > pk[1] && pk[1] > pk[2] && pk[2] < 0.5 * a) B.push("Slow grind, bounces shrinking");
+    }
+    // 8. Time at level
+    if (atLevel >= 40) B.push("Sitting at level " + atLevel + " min");
+    else if (touched && atLevel <= 10 && distR >= 0.3) H.push("Left level quickly");
+    // 9. Funding
+    const f = w.funding || 0;
+    if (d === 1 ? f > 0.0005 : f < -0.0005) B.push("Crowded on your side (funding)");
+    else if (d === 1 ? f < -0.0003 : f > 0.0003) H.push("Crowded against you (funding)");
+
+    // Stage
+    let stage;
+    if (acc >= 2 || distR <= -0.5) stage = "Broken";
+    else if (distR < -0.1) stage = "Breaking";
+    else if (touched && distR >= 1.0) stage = "Held";
+    else if (touched && distR >= 0.3) stage = "Rejecting";
+    else if (touched || distR <= 0.3) stage = "Testing";
+    else stage = "Approaching";
+
+    const h = H.length, b = B.length, diff = h - b;
+    const lean = diff >= 3 ? "Leaning HOLD" : diff <= -3 ? "Leaning BREAK" : "Unclear";
+    return { H, B, h, b, lean, stage, distR, pos: h + b ? h / (h + b) : 0.5 };
+  }
+    return { EX, TICK1, liveRead };
+  })();
+  const EXNAME = { mexc: "MEXC Futures", binance: "Binance Futures", bybit: "Bybit Perpetuals" };
+
+  let lw = null;
+  function validLiveCfg(c){
+    if (!c || typeof c !== "object") return null;
+    const ok = EXNAME[c.ex] && /^[A-Z0-9_]{2,30}$/.test(c.sym || "") && (c.dir === 1 || c.dir === -1) &&
+               +c.level > 0 && +c.a1 > 0 && [-1, 0, 1].includes(+c.tr) && [-1, 0, 1].includes(+c.btcTr);
+    if (!ok) return null;
+    return { ex: c.ex, sym: c.sym, dir: c.dir, level: +c.level, a1: +c.a1, tr: +c.tr, btcTr: +c.btcTr,
+             touches: Math.max(1, +c.touches || 1), funding: +c.funding || 0, word: c.dir === 1 ? "support" : "resistance" };
+  }
+  const liveAllowed = () => { try { return localStorage.getItem("mwLiveOn") !== "0"; } catch(e){ return true; } };
+
+  function startLive(cfg, resumed){
+    stopLive(true);
+    lw = { cfg, t: { px: 0, c1: 0, c15: 0 }, price: null, funding: cfg.funding, c1: null, c15: null, read: null,
+           updated: 0, err: "", busy: false, timer: null };
+    try { localStorage.setItem(LW_KEY, JSON.stringify({ cfg, at: Date.now() })); } catch(e){}
+    document.body.classList.add("has-lw");
+    $("lwBar").hidden = false;
+    renderLW();
+    lw.timer = setInterval(lwTick, 1000);
+    lwTick();
+    if (!resumed) toast("Live data on for " + cfg.sym.replace("_", "") + ". Tap the bar at the bottom for details.", 3000);
+  }
+  function stopLive(silent){
+    if (lw && lw.timer) clearInterval(lw.timer);
+    const was = !!lw; lw = null;
+    try { localStorage.removeItem(LW_KEY); } catch(e){}
+    document.body.classList.remove("has-lw");
+    $("lwBar").hidden = true;
+    closeSheet($("lsheetBg"), $("lsheet"));
+    if (was && !silent) toast("Live data stopped");
+  }
+  function lwTick(){
+    const w = lw; if (!w || w.busy) { if (w) renderAgeLW(); return; }
+    const now = Date.now();
+    const need = { px: now - w.t.px >= 3000, c1: now - w.t.c1 >= 10000, c15: now - w.t.c15 >= 60000 };
+    if (!need.px && !need.c1 && !need.c15){ renderAgeLW(); return; }
+    w.busy = true;
+    (async () => {
+      const ex = LWX.EX[w.cfg.ex];
+      try {
+        if (need.px){ const t = await LWX.TICK1[w.cfg.ex](w.cfg.sym); w.price = t.last; if (isFinite(t.funding)) w.funding = t.funding; w.t.px = Date.now(); }
+        if (need.c1){ w.c1 = await ex.klines(w.cfg.sym, "1m"); w.t.c1 = Date.now(); }
+        if (need.c15){ w.c15 = await ex.klines(w.cfg.sym, "15m"); w.t.c15 = Date.now(); }
+        w.err = ""; w.updated = Date.now();
+      } catch(e){ w.err = "Connection issue, retrying"; }
+      w.busy = false;
+      if (lw === w){ try { w.read = LWX.liveRead(w); } catch(e){ w.read = null; } renderLW(); }
+    })();
+  }
+  const agoLW = ts => { const s = Math.max(0, Math.round((Date.now() - ts) / 1000)); return s < 60 ? s + "s ago" : Math.round(s / 60) + " min ago"; };
+  const leanCls = r => /HOLD/.test(r.lean) ? "pos" : /BREAK/.test(r.lean) ? "neg" : "warn";
+  const stageCls = r => /Held|Rejecting/.test(r.stage) ? "pos" : /Broken|Breaking/.test(r.stage) ? "neg" : "";
+  function renderAgeLW(){
+    const el = $("lwAge"); if (lw && el && lw.updated) el.textContent = agoLW(lw.updated);
+    if (lw && sheetOpen($("lsheet"))){ const a = $("lsAge"); if (a && lw.updated) a.textContent = agoLW(lw.updated); }
+  }
+  function renderLW(){
+    const w = lw; if (!w) return;
+    const r = w.read, c = w.cfg;
+    $("lwSym").textContent = c.sym.replace("_", "") + " " + (c.dir === 1 ? "LONG" : "SHORT");
+    $("lwSym").className = "lwsym " + (c.dir === 1 ? "pos" : "neg");
+    if (!r){
+      $("lwStage").textContent = w.err || "Loading live data..."; $("lwStage").className = "lwstage";
+      $("lwLean").textContent = ""; $("lwMark").style.left = "50%";
+    } else {
+      $("lwStage").textContent = r.stage + " " + c.word; $("lwStage").className = "lwstage " + stageCls(r);
+      $("lwLean").textContent = r.lean.replace("Leaning ", "") + " " + r.h + "–" + r.b; $("lwLean").className = "lwlean " + leanCls(r);
+      $("lwMark").style.left = (r.pos * 100).toFixed(0) + "%";
+    }
+    $("lwAge").textContent = w.updated ? (w.err ? "retrying" : agoLW(w.updated)) : "";
+    if (sheetOpen($("lsheet"))) fillLSheet();
+  }
+  function fillLSheet(){
+    const w = lw, body = $("lsheetBody");
+    if (!w){ body.innerHTML = ""; return; }
+    const c = w.cfg, r = w.read;
+    const e = s => escH(String(s));
+    const box = (k, v, cls) => '<div class="box"><div class="k">' + k + '</div><div class="v ' + (cls || "") + '">' + v + '</div></div>';
+    const list = (arr, cls) => arr.length ? '<ul class="lsl ' + cls + '">' + arr.map(x => '<li>' + e(x) + '</li>').join("") + '</ul>' : '<div class="k">None</div>';
+    body.innerHTML =
+      '<div class="lshead"><b>' + e(c.sym.replace("_", "")) + '</b> <span class="badge ' + (c.dir === 1 ? "long" : "short") + '">' + (c.dir === 1 ? "LONG" : "SHORT") + '</span>' +
+        '<span class="k">' + e(EXNAME[c.ex]) + '</span></div>' +
+      '<div class="lhead"><span>BREAK</span><span class="lstage ' + (r ? stageCls(r) : "") + '">' + (r ? e(r.stage) : "Loading") + '</span><span>HOLD</span></div>' +
+      '<div class="lbar"><i style="left:' + (r ? (r.pos * 100).toFixed(0) : 50) + '%"></i></div>' +
+      (r ? '<div class="lsline">' + e(r.stage + " " + c.word) + ' · <b class="' + leanCls(r) + '">' + e(r.lean + " " + r.h + "–" + r.b) + '</b></div>' : '') +
+      '<div class="res lsgrid">' +
+        box("Price", w.price ? fmtPx(w.price) : "–") +
+        box(c.dir === 1 ? "Support (watched)" : "Resistance (watched)", fmtPx(c.level)) +
+        box("Distance", r ? (r.distR >= 0 ? "" : "-") + Math.abs(r.distR).toFixed(1) + " ATR" + (r.distR < 0 ? " beyond" : "") : "–", r && r.distR < 0 ? "neg" : "") +
+        box("Funding", (w.funding * 100).toFixed(4) + "%") +
+      '</div>' +
+      (r ? '<div class="lscols"><div><div class="k lst pos">Hold (' + r.h + ')</div>' + list(r.H, "pos") + '</div>' +
+           '<div><div class="k lst neg">Break (' + r.b + ')</div>' + list(r.B, "neg") + '</div></div>' : '') +
+      '<div class="k lsfoot">' + (w.err ? e(w.err) + " · " : "") + 'Updated <span id="lsAge">' + (w.updated ? agoLW(w.updated) : "–") + '</span> · price every 3s, candles every 10s / 60s</div>' +
+      '<p class="note">The lean is a guide, not a signal. Confirm on your chart before acting.</p>' +
+      '<div class="btns"><button type="button" class="btn lsstop" id="lsStop">Stop live data</button>' +
+      '<a class="btn" href="scanner.html">Open Scanner</a></div>';
+    $("lsStop").addEventListener("click", () => stopLive());
+  }
+  function openLSheet(){ if (!lw) return; fillLSheet(); openSheet($("lsheetBg"), $("lsheet")); }
+  $("lwBar").addEventListener("click", openLSheet);
+  $("lwBar").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); openLSheet(); } });
+  $("lsheetBg").addEventListener("click", () => closeSheet($("lsheetBg"), $("lsheet")));
+
   // ---------------- MOBILE RISK POPUP ----------------
   function syncMobileRisk(){
     const btn = $("mRisk"), r = state.risk;
@@ -1099,7 +1457,7 @@
     btn.className = "mrisk " + cls;
     $("mRiskTxt").textContent = r.riskPct !== null ? r.riskPct.toFixed(1) + "%" : "Risk";
     btn.hidden = false;
-    if (!$("rsheet").hidden) fillRiskSheet();
+    if (sheetOpen($("rsheet"))) fillRiskSheet();
   }
   function fillRiskSheet(){
     const panel = $("riskPanel").cloneNode(true);
@@ -1111,12 +1469,12 @@
   function openRiskSheet(){
     if (!state.risk) return;
     fillRiskSheet();
-    $("rsheetBg").hidden = false; $("rsheet").hidden = false;
+    openSheet($("rsheetBg"), $("rsheet"));
   }
-  function closeRiskSheet(){ $("rsheetBg").hidden = true; $("rsheet").hidden = true; }
+  function closeRiskSheet(){ closeSheet($("rsheetBg"), $("rsheet")); }
   $("mRisk").addEventListener("click", openRiskSheet);
   $("rsheetBg").addEventListener("click", closeRiskSheet);
-  document.addEventListener("keydown", e => { if (e.key === "Escape") closeRiskSheet(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape"){ closeRiskSheet(); closeSheet($("lsheetBg"), $("lsheet")); } });
   window.addEventListener("resize", () => { if (window.innerWidth > 700) closeRiskSheet(); });
 
   // Mobile bar buttons reuse the main actions
@@ -1133,6 +1491,14 @@
 
   refresh(); renderLog(); markNav();
   importFromScanner();
+  if (!lw){
+    try {
+      const sv = JSON.parse(localStorage.getItem(LW_KEY) || "null");
+      const c = sv && validLiveCfg(sv.cfg);
+      if (c && Date.now() - sv.at < 6 * 3600000 && liveAllowed()) startLive(c, true);
+      else localStorage.removeItem(LW_KEY);
+    } catch(e){}
+  }
 })();
 </script>
 </body>
