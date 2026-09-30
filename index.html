@@ -100,6 +100,16 @@
      background:#06203a; border:1px solid var(--accent); padding:10px 16px; border-radius:8px;
      font-size:14px; opacity:0; transition:opacity .25s; pointer-events:none}
   .toast.show{opacity:1}
+  .logdel{width:26px; height:26px; padding:0; border-radius:6px; border:1px solid transparent; background:transparent;
+     color:var(--muted); cursor:pointer; font-size:14px; line-height:1}
+  .logdel:hover{color:#fff; background:rgba(239,68,68,0.25); border-color:rgba(239,68,68,0.6)}
+  #logTable th:last-child, #logTable td:last-child{position:sticky; right:0; background:#0b2542; padding:2px 4px; width:34px}
+  .undo{position:fixed; left:50%; bottom:20px; transform:translateX(-50%); z-index:60; display:flex; align-items:center; gap:12px;
+     background:#06203a; border:1px solid var(--accent); padding:8px 10px 8px 16px; border-radius:8px; font-size:14px;
+     box-shadow:0 6px 20px rgba(0,0,0,0.4)}
+  .undo[hidden]{display:none}
+  .undo button{padding:6px 12px; border-radius:6px; border:none; cursor:pointer; font-weight:700; color:#fff;
+     background:linear-gradient(90deg,var(--royal),var(--blue))}
   /* Copy button inside calculator fields */
   .inwrap{position:relative; display:block}
   .inwrap input{padding-right:40px}
@@ -199,6 +209,11 @@
     #logTable td:nth-child(6){flex:1 1 100%}
     #logTable td:nth-child(6)::before{content:"Plan TP / SL: "; color:var(--muted)}
     #logTable td:nth-child(7)::before{content:"Actual "; color:var(--muted)}
+    #logTable tr{position:relative; padding-right:44px}
+    #logTable td:nth-child(8){position:absolute; top:6px; right:6px; background:transparent; width:auto}
+    .logdel{width:34px; height:34px; font-size:16px}
+    .undo{bottom:84px; max-width:92vw}
+    body.has-lw .undo{bottom:150px}
     /* Sticky score + actions bar */
     .mbar{display:flex; align-items:center; gap:8px; position:fixed; left:0; right:0; bottom:0; z-index:30;
        padding:10px 12px calc(10px + env(safe-area-inset-bottom)); background:rgba(3,19,35,0.96);
@@ -415,6 +430,7 @@
           <button class="btn primary" id="btnCopy" type="button">Copy Summary</button>
           <button class="btn primary" id="btnSave" type="button">Save to Log</button>
           <button class="btn" id="btnCsv" type="button">Export CSV</button>
+          <button class="btn" id="btnCopyAll" type="button">Copy All Logs</button>
           <button class="btn" id="btnReset" type="button">Reset</button>
         </div>
         <p class="note">"Save to Log" needs a coin and the calculator filled in. Questions are optional. It stores the trade in your browser. "Export CSV" downloads all saved trades. If the log is empty, it downloads the current trade.</p>
@@ -422,7 +438,7 @@
         <h3>Saved Trades (<span id="logCount">0</span>)</h3>
         <div class="tablewrap">
           <table id="logTable">
-            <thead><tr><th>Time</th><th>Coin</th><th>Dir</th><th>Score</th><th>R:R</th><th>Plan TP / SL</th><th>Actual</th></tr></thead>
+            <thead><tr><th>Time</th><th>Coin</th><th>Dir</th><th>Score</th><th>R:R</th><th>Plan TP / SL</th><th>Actual</th><th></th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -454,6 +470,7 @@
   <div class="rsheet-grip"></div>
   <div id="rsheetBody"></div>
 </div>
+<div class="undo" id="undoBar" hidden><span id="undoTxt"></span><button type="button" id="undoBtn">Undo</button></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -901,7 +918,8 @@
     if (!tb) return;
     $("logCount").textContent = log.length;
     tb.innerHTML = "";
-    log.slice().reverse().forEach(r => {
+    log.slice().reverse().forEach((r, k) => {
+      const idx = log.length - 1 - k;
       const tr = document.createElement("tr");
       const pv = r["Net Profit at TP"] ?? r["Profit at TP"], lv = r["Net Loss at SL"] ?? r["Loss at SL"];
       const rrv = r["Reward:Risk (net)"] ?? r["Reward:Risk"];
@@ -913,6 +931,10 @@
         [typeof act === "number" ? (act > 0 ? "+" : "") + act.toFixed(2) : "–", typeof act === "number" ? (act >= 0 ? "pos" : "neg") : ""]
       ];
       cells.forEach(([v, cls]) => { const td = document.createElement("td"); td.textContent = v; if (cls) td.className = cls; tr.appendChild(td); });
+      const tdx = document.createElement("td"), bx = document.createElement("button");
+      bx.type = "button"; bx.className = "logdel"; bx.dataset.i = idx; bx.textContent = "\u2715";
+      bx.title = "Delete this trade"; bx.setAttribute("aria-label", "Delete " + (r.Coin || "trade") + " " + fmtTime(r.Time));
+      tdx.appendChild(bx); tr.appendChild(tdx);
       tb.appendChild(tr);
     });
   }
@@ -1033,7 +1055,8 @@
       toast("Not saved. Missing: " + chk.miss.join(", "), 4000);
       return;
     }
-    const log = getLog(); log.push(snapshot()); setLog(log); renderLog();
+    const snap = snapshot(); snap.Summary = summaryText();
+    const log = getLog(); log.push(snap); setLog(log); renderLog();
     toast(storageOK ? "Trade saved to log (" + log.length + ")" : "Saved for this session only (browser storage is blocked)");
   });
   $("btnCsv").addEventListener("click", () => {
@@ -1049,8 +1072,59 @@
       toast(log.length ? "CSV downloaded: " + log.length + " saved trade(s)" : "CSV downloaded: current trade");
     }
   });
+  // Delete a single saved trade (with Undo)
+  let undoItem = null, undoTimer = null;
+  function hideUndo(){ $("undoBar").hidden = true; undoItem = null; clearTimeout(undoTimer); }
+  document.querySelector("#logTable tbody").addEventListener("click", e => {
+    const b = e.target.closest && e.target.closest(".logdel"); if (!b) return;
+    const log = getLog(), i = +b.dataset.i;
+    if (!(i >= 0 && i < log.length)) return;
+    const [removed] = log.splice(i, 1);
+    setLog(log); renderLog();
+    undoItem = { i, removed };
+    $("undoTxt").textContent = "Deleted " + (removed.Coin || "trade") + " " + fmtTime(removed.Time);
+    $("undoBar").hidden = false;
+    clearTimeout(undoTimer); undoTimer = setTimeout(hideUndo, 6000);
+  });
+  $("undoBtn").addEventListener("click", () => {
+    if (!undoItem) return;
+    const log = getLog(); log.splice(Math.min(undoItem.i, log.length), 0, undoItem.removed);
+    setLog(log); renderLog(); hideUndo(); toast("Trade restored");
+  });
+
+  // Rebuild a summary for trades saved before summaries were stored
+  function summaryFromLog(r){
+    const n = v => typeof v === "number" ? v : null;
+    const L = ["------" + fmtTime(r.Time) + "--------", (r.Coin || "COIN") + " " + (r.Direction || ""), "--------------------------",
+               "Score " + (r.Score ?? 0) + "/100"];
+    if (r.Verdict) L.push(r.Verdict);
+    if (r.Entry !== "" && r.Entry !== undefined){
+      L.push("-----Trade Data------------", "Entry " + r.Entry, "SL " + r["Stop Loss"], "TP " + r["Take Profit"]);
+      if (n(r["Initial Margin"]) !== null) L.push("Margin " + fmt$(r["Initial Margin"]) + " x" + r.Leverage + (r["Margin Mode"] ? " (" + r["Margin Mode"] + ")" : ""));
+      if (n(r["Gross Profit at TP"]) !== null) L.push("TP " + fmt$(r["Gross Profit at TP"]) + " (net " + fmt$(r["Net Profit at TP"]) + ")");
+      if (n(r["Gross Loss at SL"]) !== null) L.push("SL " + fmt$(r["Gross Loss at SL"]) + " (net " + fmt$(r["Net Loss at SL"]) + ")");
+      if (n(r["Reward:Risk (net)"]) !== null) L.push("R:R 1:" + r["Reward:Risk (net)"].toFixed(2));
+      if (n(r["Actual P/L"]) !== null) L.push("Actual P/L " + fmt$(r["Actual P/L"]));
+      if (n(r["Risk % of Balance"]) !== null && n(r.Balance) !== null) L.push("Risk " + r["Risk % of Balance"].toFixed(2) + "% of " + fmt$(r.Balance));
+      if (r["Risk Issues"]){
+        L.push("-----Risk Check------------");
+        String(r["Risk Issues"]).split("; ").forEach(x => L.push("[" + (r["Risk Status"] === "Change" ? "CHANGE" : "CHECK") + "] " + x));
+      }
+    }
+    L.push("--------------------------");
+    return L.join("\n");
+  }
+  $("btnCopyAll").addEventListener("click", () => {
+    const log = getLog();
+    if (!log.length){ toast("No saved trades to copy"); return; }
+    const SEP = "///////////////////////////////";
+    const parts = log.map(r => String(r.Summary || summaryFromLog(r)).replace(/\n-{10,}\s*$/, ""));
+    const text = parts.map((s, i) => s + "\n" + (i < parts.length - 1 ? SEP : "--------------------------")).join("\n\n");
+    copyText(text, "Copied " + log.length + " saved trade" + (log.length > 1 ? "s" : ""));
+  });
+
   $("btnClearLog").addEventListener("click", () => {
-    if (confirm("Delete all saved trades from this browser?")){ setLog([]); renderLog(); toast("Log cleared"); }
+    if (confirm("Delete all saved trades from this browser?")){ setLog([]); renderLog(); hideUndo(); toast("Log cleared"); }
   });
   $("btnReset").addEventListener("click", () => {
     stopLive(true);
