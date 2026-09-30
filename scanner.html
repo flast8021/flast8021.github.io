@@ -732,7 +732,7 @@
     p.set("scan", JSON.stringify({ score: c.score, status: STATUS[c.status], ex: EX[$("exchange").value].name, s: c.s }));
     p.set("lw", JSON.stringify({ ex: $("exchange").value, sym: c.sym, dir: c.dir, level: c.level, a1: +c.a1.toPrecision(8),
                                  tr: c.tr, btcTr: c.btcTr, touches: c.touches, funding: c.funding }));
-    return "index.html?" + p.toString() + "#sec-checklist";
+    return p.toString();
   }
 
   const chipHtml = (on, txt) => '<span class="chk ' + (on === null ? "" : on ? "on" : "off") + '">' + (on ? "&#10003; " : on === false ? "&#10007; " : "") + txt + "</span>";
@@ -764,7 +764,7 @@
         '</div>' +
         '<div class="checks">' + chipsOf(c).join("") + '</div>' +
         '<div class="plan">Plan: Entry <b>' + fmtPx(c.entry) + '</b> &middot; SL <b>' + fmtPx(c.sl) + '</b> &middot; TP <b>' + fmtPx(c.tp) + '</b> &middot; R:R <b>1:' + c.rr.toFixed(2) + '</b></div>' +
-        '<div class="sc-actions"><button type="button" class="btn live-btn">Watch live</button><a class="btn primary" href="' + esc(useLink(c)) + '">Use in Checklist &rarr;</a></div>' +
+        '<div class="sc-actions"><button type="button" class="btn live-btn">Watch live</button><a class="btn primary use-btn" href="index.html#sec-checklist" data-use="' + esc(useLink(c)) + '">Use in Checklist &rarr;</a></div>' +
       '</div>';
     }).join("");
   }
@@ -1093,14 +1093,14 @@
               (w.err ? " · " + w.err : "") + " · updated " + ago(w.updated));
     why.textContent = (r.H.length ? "Hold: " + r.H.join(", ") : "") + (r.H.length && r.B.length ? "  |  " : "") + (r.B.length ? "Break: " + r.B.join(", ") : "");
     // Pass the live read to the checklist link
-    const a = w.card.querySelector("a.btn.primary");
-    if (a){
+    const a = w.card.querySelector("a.use-btn");
+    if (a && a.dataset.use){
       try {
-        const u = new URL(a.getAttribute("href"), location.href);
-        const meta = JSON.parse(u.searchParams.get("scan") || "{}");
+        const u = new URLSearchParams(a.dataset.use);
+        const meta = JSON.parse(u.get("scan") || "{}");
         meta.live = r.stage + ", " + r.lean + " " + r.h + "–" + r.b;
-        u.searchParams.set("scan", JSON.stringify(meta));
-        a.setAttribute("href", "index.html" + u.search + u.hash);
+        u.set("scan", JSON.stringify(meta));
+        a.dataset.use = u.toString();
       } catch(e){}
     }
   }
@@ -1120,6 +1120,22 @@
   setLiveUI();
 
   restoreResults();
+
+  // ---------------- ONE-TIME HANDOVER TO THE CHECKLIST ----------------
+  // Trade data is passed once through browser storage, not the web address,
+  // so reloads, "Request desktop site" and restored tabs never re-import it.
+  $("results").addEventListener("click", e => {
+    const a = e.target.closest && e.target.closest("a.use-btn");
+    if (!a || !a.dataset.use) return;
+    e.preventDefault();
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    try {
+      localStorage.setItem("mwHandover", JSON.stringify({ id, at: Date.now(), q: a.dataset.use }));
+      location.href = "index.html?h=" + id + "#sec-checklist";
+    } catch(err){
+      toast("Could not pass the trade to the Checklist (browser storage is blocked).", 3500);
+    }
+  });
 
   $("btnScan").addEventListener("click", scan);
   $("btnTest").addEventListener("click", testConnection);
