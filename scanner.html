@@ -778,12 +778,25 @@
       }));
     } catch(e){}
   }
+  // Cards saved before the one-time handover update still carry the trade in the link.
+  // Move it into data-use so they hand over the same way as new cards.
+  function upgradeUseLinks(){
+    document.querySelectorAll("#results .sc-card .sc-actions a.btn.primary").forEach(a => {
+      if (a.dataset.use) return;
+      const href = a.getAttribute("href") || "", i = href.indexOf("?");
+      if (i < 0) return;
+      a.dataset.use = href.slice(i + 1).split("#")[0];
+      a.classList.add("use-btn");
+      a.setAttribute("href", "index.html#sec-checklist");
+    });
+  }
   function restoreResults(){
     let s = null;
     try { s = JSON.parse(localStorage.getItem(RKEY) || "null"); } catch(e){}
     if (!s || !s.results) return;
     $("mktCard").innerHTML = s.market; $("mktCard").hidden = false;
     $("results").innerHTML = s.results;
+    upgradeUseLinks();
     $("topTitle").textContent = s.top;
     const d = new Date(s.at), mins = Math.round((Date.now() - s.at) / 60000);
     const hhmm = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
@@ -1125,8 +1138,10 @@
   // Trade data is passed once through browser storage, not the web address,
   // so reloads, "Request desktop site" and restored tabs never re-import it.
   $("results").addEventListener("click", e => {
-    const a = e.target.closest && e.target.closest("a.use-btn");
-    if (!a || !a.dataset.use) return;
+    const a = e.target.closest && e.target.closest(".sc-actions a.btn.primary");
+    if (!a) return;
+    if (!a.dataset.use) upgradeUseLinks();
+    if (!a.dataset.use) return;
     e.preventDefault();
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     try {
