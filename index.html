@@ -467,6 +467,20 @@
   .chktag svg{width:10px; height:10px}
   .dchip.inchk .chktag{display:inline-flex; position:absolute; top:-9px; left:10px}
   .sc-card.inchk .sc-top .chktag{display:inline-flex}
+
+  /* Info icons: long notes hidden until tapped */
+  .ibtn{display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; margin-left:6px; padding:0; vertical-align:middle;
+     border-radius:50%; border:1px solid rgba(26,155,240,0.6); background:rgba(26,155,240,0.10); color:#8fd3ff; cursor:pointer;
+     font:italic 700 12px/1 Georgia, "Times New Roman", serif; text-transform:none; letter-spacing:0}
+  .ibtn:hover, .ibtn[aria-expanded="true"]{background:var(--blue); color:#fff; border-color:var(--blue)}
+  .ibtn:focus-visible{outline:2px solid var(--blue); outline-offset:2px}
+  .note.info-pop{display:none; margin:0 0 12px; padding:9px 12px; border-radius:10px; background:rgba(26,155,240,0.08); border:1px solid rgba(26,155,240,0.35)}
+  .note.info-pop.show{display:block; animation:riskIn .2s ease-out}
+  /* Stopped coins stay in the dock until closed with X */
+  .dchip.stopped{border-style:dashed}
+  .dchip.stopped .dtop > :not(.dsym), .dchip.stopped .lbar{opacity:.55}
+  .dchip.stopped .lwdot{background:var(--muted); box-shadow:none; animation:none}
+  .dchip.stopped .lbar{filter:grayscale(.8)}
 </style>
 </head>
 <body>
@@ -525,10 +539,10 @@
   </div>
 
   <div class="card">
-    <h2>Top <span id="topTitle">10</span> setups</h2>
-    <div class="results" id="results"><div class="empty">Run a scan to see the top coins.</div></div>
-    <p class="note">Scores and suggestions are a starting point, not a signal. Always confirm the level, the sweep and the candle close on your own chart before entering.
+    <h2>Top <span id="topTitle">10</span> setups <button type="button" class="ibtn" data-info="infoScan" aria-label="More info" title="More info" aria-expanded="false">i</button></h2>
+    <p class="note info-pop" id="infoScan">Scores and suggestions are a starting point, not a signal. Always confirm the level, the sweep and the candle close on your own chart before entering.
       Levels come from 1H and 4H swing points. The sweep and break of structure are checked on the last 4 hours of closed 15m candles.</p>
+    <div class="results" id="results"><div class="empty">Run a scan to see the top coins.</div></div>
   </div>
 </section>
 
@@ -564,7 +578,12 @@
       </div>
 
       <div class="card" id="sec-calc">
-        <h2>3. Trade Calculator <span style="font-weight:400;color:var(--muted);font-size:13px">(optional)</span></h2>
+        <h2>3. Trade Calculator <span style="font-weight:400;color:var(--muted);font-size:13px">(optional)</span> <button type="button" class="ibtn" data-info="infoCalc" aria-label="More info" title="More info" aria-expanded="false">i</button></h2>
+        <p class="note info-pop" id="infoCalc">Fees are % (0.02 = 0.02%). A negative fee means a rebate. TP is a limit order (maker fee) and SL is a market order (taker fee).
+          Funding rate is per funding interval (usually 8h). It is filled in from the Scanner. Funding is only paid if your position is open when it settles, so set <b>Funding payments</b> to how many times you expect to hold through it (0 = not included in P&amp;L).
+          <b>Cost (MEXC Margin)</b> is the "Margin" MEXC shows next to Open Long. It includes the reserved open and close fees.
+          Gross P&amp;L and ROE should match the exchange. Net P&amp;L is what you actually keep after fees.
+          The liquidation price is an estimate. Your exchange's figure is the one that counts.</p>
         <div class="calc-fields">
         <div class="row3">
           <div><label for="entry">Entry price</label><input type="number" id="entry" inputmode="decimal" step="any"></div>
@@ -614,14 +633,9 @@
         </div>
         <div class="row">
           <div><label for="actual">Actual profit / loss ($)</label><input type="number" id="actual" step="any" placeholder="e.g. 12.5 or -8"></div>
-          <div></div>
+          <div><label for="fundn">Funding payments</label><input type="number" id="fundn" inputmode="numeric" step="1" min="0" value="0" title="How many funding settlements you expect to hold through. 0 = not included in P&amp;L"></div>
         </div>
         </div>
-        <p class="note">Fees are % (0.02 = 0.02%). A negative fee means a rebate. TP is a limit order (maker fee) and SL is a market order (taker fee).
-          Funding rate is per funding interval (usually 8h). It is filled in from the Scanner and is not included in P&amp;L, because it depends on how long you hold.
-          <b>Cost (MEXC Margin)</b> is the "Margin" MEXC shows next to Open Long. It includes the reserved open and close fees.
-          Gross P&amp;L and ROE should match the exchange. Net P&amp;L is what you actually keep after fees.
-          The liquidation price is an estimate. Your exchange's figure is the one that counts.</p>
 
         <div class="res" style="margin-top:12px">
           <div class="box"><div class="k">Profit if TP hit (gross / net)</div><div class="v pos" id="rProfit">–</div></div>
@@ -653,7 +667,8 @@
           <div id="riskList"></div>
         </div>
 
-        <h3 class="h-act">5. Actions &amp; Logs</h3>
+        <h3 class="h-act">5. Actions &amp; Logs <button type="button" class="ibtn" data-info="infoAct" aria-label="More info" title="More info" aria-expanded="false">i</button></h3>
+        <p class="note info-pop" id="infoAct">"Save to Log" needs a coin and the calculator filled in. Questions are optional. It stores the trade in your browser. "Export CSV" downloads all saved trades. If the log is empty, it downloads the current trade.</p>
         <div class="btns">
           <button class="btn primary" id="btnCopy" type="button">Copy Summary</button>
           <button class="btn primary" id="btnSave" type="button">Save to Log</button>
@@ -661,7 +676,6 @@
           <button class="btn" id="btnCopyAll" type="button">Copy All Logs</button>
           <button class="btn" id="btnReset" type="button">Reset</button>
         </div>
-        <p class="note">"Save to Log" needs a coin and the calculator filled in. Questions are optional. It stores the trade in your browser. "Export CSV" downloads all saved trades. If the log is empty, it downloads the current trade.</p>
 
         <h3>Saved Trades (<span id="logCount">0</span>)</h3>
         <div class="tablewrap">
@@ -845,6 +859,10 @@
   // ---------------- CALCULATOR ----------------
   const num = id => { const v = parseFloat($(id).value); return isNaN(v) ? null : v; };
   const fmt$ = v => (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+  // Small dollar amounts keep 3 significant digits (e.g. $0.0045) instead of rounding to $0.00
+  const fmt$s = v => { const a = Math.abs(v); if (a >= 1 || a === 0) return fmt$(v);
+    const d = Math.min(10, Math.max(2, 2 - Math.floor(Math.log10(a))));
+    return (v < 0 ? "-$" : "$") + a.toFixed(d).replace(/0+$/, "").replace(/\.$/, ""); };
   const fmtP = v => (v >= 0 ? "+" : "") + v.toFixed(2) + "%";
   // Prices of 1 or more keep fixed decimals; smaller prices keep 6 significant digits (e.g. 0.000003783)
   const fmtPx = v => { if (!isFinite(v)) return "-"; const a = Math.abs(v); if (a > 0 && a < 1) return String(Number(v.toPrecision(6))); return Number(v.toFixed(a >= 100 ? 2 : 4)).toString(); };
@@ -855,6 +873,7 @@
     const maker = (num("maker") || 0) / 100, taker = (num("taker") || 0) / 100;
     const entryType = $("entryType").value, sizeBy = $("sizeBy").value, mode = $("mode").value;
     const fundRate = (num("fund") || 0) / 100;
+    const fundN = Math.max(0, Math.floor(num("fundn") || 0));
     const mmr = Math.max(0, num("mmr") || 0) / 100;
     const bal = num("bal");
     const minrr = minRR();
@@ -908,8 +927,10 @@
     const entryFee = qty * fillEntry * entryRate;
     const feeTP = entryFee + qty * fillTP * maker;
     const feeSL = entryFee + qty * fillSL * taker;
-    const profit = grossTP - feeTP;
-    const loss = grossSL - feeSL;
+    const fundAmt = notional * fundRate * dir;                 // per settlement, positive = you pay
+    const fundTotal = fundAmt * fundN;                         // only counted when payments > 0
+    const profit = grossTP - feeTP - fundTotal;
+    const loss = grossSL - feeSL - fundTotal;
     const rr = loss < 0 ? profit / Math.abs(loss) : Infinity;
 
     // Liquidation (linear USDT-margined estimate)
@@ -931,8 +952,8 @@
     $("rMargin").textContent = fmt$(initMargin) + " / " + fmt$(cost);
     $("rMove").textContent = (Math.abs(tp - entry) / entry * 100).toFixed(2) + "% / " + (Math.abs(sl - entry) / entry * 100).toFixed(2) + "%";
     $("rFees").textContent = fmt$(feeTP) + " / " + fmt$(feeSL);
-    const fundAmt = notional * fundRate * dir;                 // positive = you pay
-    $("rFund").textContent = fundRate === 0 ? "–" : (fundAmt > 0 ? "Pay " : "Receive ") + fmt$(Math.abs(fundAmt));
+    $("rFund").textContent = fundRate === 0 ? "–" : (fundAmt > 0 ? "Pay " : "Receive ") + fmt$s(Math.abs(fundAmt)) +
+      (fundN > 0 ? " (×" + fundN + " = " + fmt$s(Math.abs(fundTotal)) + ")" : "");
     $("rFund").className = "v " + (fundRate === 0 ? "" : fundAmt > 0 ? "neg" : "pos");
     $("rLiq").textContent = noLiq ? "None (balance covers the move to 0)" : instantLiq ? "Leverage too high for this maintenance %" : fmtPx(liq) + " (" + mode + ")";
     $("rLiq").className = "v " + (liqBeforeSL || instantLiq ? "neg" : "");
@@ -949,7 +970,7 @@
     else if (rr < minrr) state.rrReason = "No: R:R " + rrTxt + " is below your minimum 1:" + minrr + ".";
     else state.rrReason = "Yes: R:R " + rrTxt + " meets your minimum 1:" + minrr + ".";
     state.calc = { entry, sl, tp, lev, margin: initMargin, cost, sizeBy, amt, mode,
-                   makerPct: maker*100, takerPct: taker*100, entryType, fundPct: fundRate*100,
+                   makerPct: maker*100, takerPct: taker*100, entryType, fundPct: fundRate*100, fundN, fundTotal,
                    notional, qty, grossTP, grossSL, profit, loss, rr: profit > 0 ? rr : 0,
                    liq: (noLiq || instantLiq) ? null : liq, feeTP, feeSL,
                    roeTP: grossTP/initMargin*100, roeSL: grossSL/initMargin*100 };
@@ -1044,7 +1065,7 @@
     if (x.fundRate !== 0){
       const f = x.notional * x.fundRate * x.dir;          // positive = you pay
       if (f > 0)
-        add(f / Math.max(lossAbs, 1e-9) > 0.1 ? "amber" : "info", "You pay " + fmt$(f) + " funding per interval",
+        add(f / Math.max(lossAbs, 1e-9) > 0.1 ? "amber" : "info", "You pay " + fmt$s(f) + " funding per interval",
             "At " + (x.fundRate * 100).toFixed(4) + "% funding, " + (x.dir === 1 ? "longs" : "shorts") + " pay every funding interval (usually 8h) while the trade is open.",
             "Factor it in if you plan to hold through funding.");
     }
@@ -1093,7 +1114,7 @@
 
   // ---------------- DATA / EXPORT ----------------
   const CSV_COLS = ["Time","Coin","Direction","Score",
-    "Entry","Stop Loss","Take Profit","Leverage","Margin Mode","Entry Order","Maker %","Taker %","Funding %",
+    "Entry","Stop Loss","Take Profit","Leverage","Margin Mode","Entry Order","Maker %","Taker %","Funding %","Funding Payments",
     "Position Value","Quantity","Initial Margin","Cost incl. Fees",
     "Gross Profit at TP","Net Profit at TP","Gross Loss at SL","Net Loss at SL",
     "Reward:Risk (net)","ROE TP %","ROE SL %","Est. Liquidation",
@@ -1112,7 +1133,7 @@
       ...Object.fromEntries(BONUS.map(q => ["Bonus: " + q.id, yn(q.id)])),
       "Entry": c ? c.entry : "", "Stop Loss": c ? c.sl : "", "Take Profit": c ? c.tp : "",
       "Leverage": c ? c.lev : "", "Margin Mode": c ? c.mode : "", "Entry Order": c ? c.entryType : "",
-      "Maker %": c ? c.makerPct : "", "Taker %": c ? c.takerPct : "", "Funding %": c ? c.fundPct : "",
+      "Maker %": c ? c.makerPct : "", "Taker %": c ? c.takerPct : "", "Funding %": c ? c.fundPct : "", "Funding Payments": c ? c.fundN : "",
       "Position Value": c ? r(c.notional) : "", "Quantity": c ? r(c.qty) : "",
       "Initial Margin": c ? r(c.margin) : "", "Cost incl. Fees": c ? r(c.cost) : "",
       "Gross Profit at TP": c ? r(c.grossTP) : "", "Net Profit at TP": c ? r(c.profit) : "",
@@ -1151,6 +1172,7 @@
       L.push("TP " + fmt$(c.grossTP) + " (net " + fmt$(c.profit) + ")");
       L.push("SL " + fmt$(c.grossSL) + " (net " + fmt$(c.loss) + ")");
       L.push("R:R 1:" + c.rr.toFixed(2));
+      if (c.fundN > 0) L.push("Funding x" + c.fundN + " " + (c.fundTotal > 0 ? "paid " : "received ") + fmt$s(Math.abs(c.fundTotal)) + " (in net)");
       if (num("actual") !== null) L.push("Actual P/L " + fmt$(num("actual")));
       const rk = state.risk;
       if (rk && rk.riskPct !== null) L.push("Risk " + rk.riskPct.toFixed(2) + "% of " + fmt$(rk.bal));
@@ -1302,7 +1324,7 @@
   }
   $("btnLong").addEventListener("click", () => setDir("long"));
   $("btnShort").addEventListener("click", () => setDir("short"));
-  ["entry","sl","tp","margin","lev","maker","taker","fund","minrr","mmr","bal","maxrisk"].forEach(id => $(id).addEventListener("input", refresh));
+  ["entry","sl","tp","margin","lev","maker","taker","fund","fundn","minrr","mmr","bal","maxrisk"].forEach(id => $(id).addEventListener("input", refresh));
   ["sizeBy","entryType","mode"].forEach(id => $(id).addEventListener("change", refresh));
   ["coin","entry","sl","tp","margin","lev","bal"].forEach(id => $(id).addEventListener("input", () => { $(id).classList.remove("missing"); updateSaveState(); }));
   $("coin").addEventListener("input", () => {
@@ -1400,7 +1422,7 @@
     state.answers = {};
     clearSugg(true);
     ["coin","entry","sl","tp","margin","lev","fund","actual"].forEach(id => { $(id).value = ""; $(id).classList.remove("missing"); });
-    $("maker").value = "0"; $("taker").value = "0.02"; $("mmr").value = "0.1"; $("minrr").value = "1.5"; $("maxrisk").value = "1";
+    $("maker").value = "0"; $("taker").value = "0.02"; $("fundn").value = "0"; $("mmr").value = "0.1"; $("minrr").value = "1.5"; $("maxrisk").value = "1";
     $("sizeBy").value = "cost"; $("entryType").value = "limit"; $("mode").value = "cross";
     setDir("long"); toast("Reset");
     if (window.MW && window.MW.scanner) window.MW.scanner.clearInChecklist();
@@ -1561,7 +1583,11 @@
     bg.addEventListener("touchmove", e => { if (e.cancelable) e.preventDefault(); }, { passive: false });
   }
   // Grip and X close the pop-up
-  function closeButtons(sh, close){ sh.querySelectorAll(".rsheet-grip, .rsheet-x").forEach(b => b.addEventListener("click", close)); }
+  // Grip minimises the pop-up; X closes it (closeX, if given, can also clear related state)
+  function closeButtons(sh, close, closeX){
+    sh.querySelectorAll(".rsheet-grip").forEach(b => b.addEventListener("click", close));
+    sh.querySelectorAll(".rsheet-x").forEach(b => b.addEventListener("click", closeX || close));
+  }
   window.MW = window.MW || {};
   window.MW.sheet = { open: openSheet, close: closeSheet, swipe: swipeToClose, buttons: closeButtons };
 
@@ -1615,6 +1641,14 @@
   const setStackH = () => { document.documentElement.style.setProperty("--stackH", bstack.offsetHeight + "px"); };
   if (window.ResizeObserver) new ResizeObserver(setStackH).observe(bstack);
   window.addEventListener("resize", setStackH); setStackH();
+
+  // Info icons toggle their note
+  document.querySelectorAll(".ibtn").forEach(b => b.addEventListener("click", e => {
+    e.preventDefault(); e.stopPropagation();
+    const n = $(b.dataset.info); if (!n) return;
+    const on = !n.classList.contains("show");
+    n.classList.toggle("show", on); b.setAttribute("aria-expanded", on ? "true" : "false");
+  }));
 
   window.MW.checklist = { load: loadFromScanner, goTo };
 })();
@@ -2085,7 +2119,8 @@
   // ---------------- LIVE WATCH (per coin, max 3) ----------------
   const LIVE_MAX = 3;
   const LIVE_KEY = "mwLiveOn";
-  const watches = new Map();              // key -> watch
+  const watches = new Map();              // key -> watch (live only)
+  const docked = new Map();               // key -> watch shown in the bottom dock (live or stopped), max LIVE_MAX
   let liveTimer = null;
 
   // Single-coin price + funding per exchange
@@ -2134,7 +2169,10 @@
     document.body.classList.toggle("live-off", !liveOn());
     try { localStorage.setItem(LIVE_KEY, liveOn() ? "1" : "0"); } catch(e){}
   }
-  function stopAll(){ Array.from(watches.keys()).forEach(k => stopWatch(k)); }
+  // Stop everything and empty the dock (new scan, live toggle off)
+  function stopAll(){ Array.from(watches.keys()).forEach(k => stopWatch(k)); docked.clear(); renderDock(); }
+  // Remove a coin from the dock (X on its pop-up). Live coins keep running.
+  function undock(key){ const w = docked.get(key); if (!w || watches.get(key) === w) return; docked.delete(key); renderDock(); }
 
   function panelOf(card){
     let p = card.querySelector(".live");
@@ -2162,6 +2200,10 @@
     btn.textContent = "Stop live"; btn.classList.add("on");
     card.classList.add("watching");
     watches.set(key, w);
+    if (!docked.has(key) && docked.size >= LIVE_MAX){           // make room: drop the oldest stopped coin
+      for (const [k, d] of docked){ if (watches.get(k) !== d){ docked.delete(k); break; } }
+    }
+    docked.set(key, w);
     renderLive(w);
     if (!liveTimer) liveTimer = setInterval(liveTick, 1000);
     liveTick();
@@ -2475,18 +2517,18 @@
     return r.bottom > h * 0.35 && r.top < h * 0.6;
   }
   function updateDockVis(){
-    const show = watches.size > 0 && !scannerInView();
+    const show = docked.size > 0 && !scannerInView();
     $("dock").classList.toggle("show", show);
     document.body.classList.toggle("has-dock", show);
   }
   function renderDock(){
-    const dock = $("dock"), list = Array.from(watches.values());
+    const dock = $("dock"), list = Array.from(docked.values());
     const badge = $("qnLive");
-    if (badge){ badge.hidden = !list.length; badge.textContent = list.length; }
+    if (badge){ badge.hidden = !watches.size; badge.textContent = watches.size; }
     dock.style.setProperty("--n", Math.max(1, list.length));
     dock.dataset.n = list.length;
     const have = {}; Array.from(dock.children).forEach(ch => have[ch.dataset.k] = ch);
-    Object.keys(have).forEach(k => { if (!watches.has(k)) have[k].remove(); });
+    Object.keys(have).forEach(k => { if (!docked.has(k)) have[k].remove(); });
     list.forEach(w => {
       let ch = have[w.key];
       if (!ch){
@@ -2498,7 +2540,7 @@
                        '<button type="button" class="dgo" title="Show in Scanner" aria-label="Show in Scanner">' +
                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></button>';
         ch.addEventListener("click", e => {
-          const cw = watches.get(ch.dataset.k);
+          const cw = docked.get(ch.dataset.k);
           if (e.target.closest(".dgo")){ if (cw) showCard(cw.card); return; }
           openLSheet(ch.dataset.k);
         });
@@ -2510,15 +2552,17 @@
       const r = w.read, c = w.cfg, q = s => ch.querySelector(s);
       q(".dsym").textContent = shortSym(c.sym); q(".dsym").className = "dsym " + (c.dir === 1 ? "long" : "short");
       q(".ddir").textContent = c.dir === 1 ? "L" : "S"; q(".ddir").className = "ddir " + (c.dir === 1 ? "long" : "short");
-      q(".lwdot").className = "lwdot" + (w.err ? " err" : "");
-      q(".dstage").textContent = r ? r.stage : (w.err ? "Retrying" : "Loading"); q(".dstage").className = "dstage " + (r ? stageCls(r) : "");
+      const on = watches.get(w.key) === w;
+      ch.classList.toggle("stopped", !on);
+      q(".lwdot").className = "lwdot" + (w.err && on ? " err" : "");
+      q(".dstage").textContent = !on ? "Stopped" : r ? r.stage : (w.err ? "Retrying" : "Loading"); q(".dstage").className = "dstage " + (on && r ? stageCls(r) : "");
       q(".dlean").innerHTML = r ? esc(r.lean.replace("Leaning ", "")) + '<span class="dcnt"> ' + r.h + "–" + r.b + '</span>' : ""; q(".dlean").className = "dlean " + (r ? leanCls(r) : "");
       q(".lbar i").style.left = (r ? r.pos * 100 : 50).toFixed(0) + "%";
       ch.classList.toggle("inchk", !!inChkCard && w.card === inChkCard);
       ch.setAttribute("aria-label", shortSym(c.sym) + " " + (c.dir === 1 ? "long" : "short") + ", " + (r ? r.stage + ", " + r.lean : "loading") + ". Open details");
     });
     updateDockVis();
-    if (sheetKey){ if (watches.has(sheetKey)) sheetW = watches.get(sheetKey); fillLSheet(); }
+    if (sheetKey){ if (docked.has(sheetKey)) { sheetW = docked.get(sheetKey); fillLSheet(); } else closeLSheet(); }
   }
   window.addEventListener("scroll", updateDockVis, { passive: true });
   window.addEventListener("resize", updateDockVis);
@@ -2526,8 +2570,8 @@
   // Detail sheet: one coin at a time
   let sheetKey = null, sheetW = null;           // sheetW keeps the coin shown after its live data is stopped
   function openLSheet(key){
-    if (!watches.has(key)) return;
-    sheetKey = key; sheetW = watches.get(key); fillLSheet();
+    if (!docked.has(key)) return;
+    sheetKey = key; sheetW = docked.get(key); fillLSheet();
     window.MW.sheet.open($("lsheetBg"), $("lsheet"));
   }
   function closeLSheet(){
@@ -2542,7 +2586,7 @@
     setTimeout(() => card.classList.remove("pulse"), 1700);
   }
   function fillLSheet(){
-    const w = watches.get(sheetKey) || sheetW, body = $("lsheetBody");
+    const w = docked.get(sheetKey) || sheetW, body = $("lsheetBody");
     if (!w){ body.innerHTML = ""; return; }
     const c = w.cfg, r = w.read, card = w.card, isOn = watches.get(w.key) === w;
     const box = (k, v, cls, full) => '<div class="box"' + (full ? ' style="grid-column:1 / -1"' : '') + '><div class="k">' + k + '</div><div class="v ' + (cls || "") + '">' + v + '</div></div>';
@@ -2584,7 +2628,7 @@
   }
   $("lsheetBg").addEventListener("click", closeLSheet);
   window.MW.sheet.swipe($("lsheet"), $("lsheetBg"), closeLSheet);
-  window.MW.sheet.buttons($("lsheet"), closeLSheet);
+  window.MW.sheet.buttons($("lsheet"), closeLSheet, () => { const k = sheetKey; closeLSheet(); if (k) undock(k); });
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeLSheet(); });
 
   window.MW = window.MW || {};
