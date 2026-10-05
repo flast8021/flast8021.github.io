@@ -86,6 +86,7 @@
   .msg.show{display:block}
   .msg.err{background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4)}
   .msg.wrn{background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4)}
+  .msg.info{background:rgba(26,155,240,0.10); border:1px solid rgba(26,155,240,0.45)}
   .btns{display:flex; flex-wrap:wrap; gap:8px}
   .btn{padding:10px 14px; border-radius:8px; border:1px solid var(--border); cursor:pointer;
        font-weight:600; font-size:14px; color:var(--text); background:rgba(255,255,255,0.08)}
@@ -465,6 +466,13 @@
   .sc-card.pulse{animation:cardPulse 1.6s ease-out}
   /* Calculator: short inline error + highlighted fields */
   .calc-fields > .msg{margin:0 0 10px; font-size:12px; padding:6px 10px; line-height:1.45}
+  .cgrp{grid-column:1 / -1; margin:14px 0 8px; padding-top:10px; border-top:1px solid var(--border); font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:#8fd3ff}
+  .calc-fields > .cgrp:first-child{margin-top:0; padding-top:0; border-top:none}
+  .calc-actions{margin-top:12px}
+  #suggNote{line-height:1.5}
+  #sec-calc .res .box:nth-child(-n+4){background:rgba(26,155,240,0.08)}
+  .chk-tools{display:flex; justify-content:flex-end; margin:-4px 0 4px}
+  .chk-tools .btn{padding:6px 12px; font-size:13px}
   input.bad{border-color:var(--red) !important; box-shadow:0 0 0 2px rgba(239,68,68,0.22)}
   /* Pop-ups: page behind does not move */
   body.locked{position:fixed; left:0; right:0; width:100%; overflow:hidden}
@@ -489,7 +497,8 @@
     .calc-fields{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px}
     .calc-fields > .row, .calc-fields > .row3{display:contents}
     .calc-fields .row > div:empty{display:none}
-    .calc-fields > .msg{grid-column:1 / -1; margin:0; order:-1}
+    .calc-fields > .msg{grid-column:1 / -1; margin:0}
+    .cgrp{margin:8px 0 0}
   }
 
   /* Coin currently loaded in the checklist */
@@ -515,6 +524,7 @@
   .dchip.stopped .lwdot{background:var(--muted); box-shadow:none; animation:none}
   .dchip.stopped .lbar{filter:grayscale(.8)}
 </style>
+
 </head>
 <body>
 <div class="wrap">
@@ -561,6 +571,20 @@
     <div class="msg err" id="scanErr"></div>
   </div>
 
+  <div class="card" id="bgCard" hidden>
+    <h2>Background scanner <button type="button" class="ibtn" data-info="infoBg" aria-label="More info" title="More info" aria-expanded="false">i</button></h2>
+    <p class="note info-pop" id="infoBg">Runs on this phone even when the app is closed. Scans every 5 minutes with your scan settings above and the fees, minimum R:R, balance and risk from the calculator. You only get a notification when a setup turns <b>Ready</b>. Nothing runs and nothing is sent from 22:00 to 06:00 (phone time). Every Ready signal is saved to Scanner performance on this phone. Turning it off stops all background checks.</p>
+    <div class="sgrid">
+      <div><label>Background scans</label><label class="switch"><input type="checkbox" id="bgOn"><span></span><em>On / Off</em></label></div>
+      <div>
+        <label for="bgEx">Exchange</label>
+        <select id="bgEx"><option value="mexc">MEXC Futures</option><option value="binance">Binance Futures</option><option value="bybit">Bybit Perpetuals</option></select>
+      </div>
+      <div><label>&nbsp;</label><button type="button" class="btn" id="bgBattery">Battery settings</button></div>
+    </div>
+    <div class="status" id="bgStatus">Off.</div>
+    <div class="msg wrn" id="bgWarn"></div>
+  </div>
   <div class="card" id="mktCard" hidden>
     <h2>Market</h2>
     <div class="mkt">
@@ -581,7 +605,7 @@
   </div>
   <div class="card" id="perfCard">
     <h2>Scanner performance <button type="button" class="ibtn" data-info="infoPerf" aria-label="More info" title="More info" aria-expanded="false">i</button></h2>
-    <p class="note info-pop" id="infoPerf">Every Ready setup the scanner shows (including ones that turn Ready on live watch) is logged in this browser. The scanner then replays 15m candles: did price come back to the entry before it expired, then did it hit the stop or the target first? If both happen in the same candle it counts as a loss. Results are checked after each scan and when the page opens. Use them to see which grades, setup types and levels actually work for you.</p>
+    <p class="note info-pop" id="infoPerf">Every Ready setup the scanner shows (including ones that turn Ready on live watch) is logged in this browser. The scanner then replays 15m candles: did price come back to the entry before it expired, then did it hit the stop or the target first? If both happen in the same candle it counts as a loss. Entry, SL and TP stay exactly as they were when the signal fired. Waiting and open trades are re-checked after every scan (every 5 minutes with the background scanner) until the entry expires or the stop or target is hit, and are listed under Being tracked. Use them to see which grades, setup types and levels actually work for you.</p>
     <div id="perfBody"></div>
     <div class="btns" style="margin-top:10px"><button type="button" class="btn" id="btnPerfUpd">Update results</button><button type="button" class="btn" id="btnPerfClr">Clear history</button></div>
   </div>
@@ -611,6 +635,7 @@
             </div>
           </div>
         </div>
+        <div class="chk-tools"><button type="button" class="btn" id="btnChkClear">Clear answers</button></div>
         <div class="sugg-banner" id="suggBanner" hidden></div>
         <h3>Must pass (10 pts each)</h3>
         <div id="mustList"></div>
@@ -626,12 +651,14 @@
           Gross P&amp;L and ROE should match the exchange. Net P&amp;L is what you actually keep after fees.
           The liquidation price is an estimate. Your exchange's figure is the one that counts.</p>
         <div class="calc-fields">
+        <div class="cgrp">Trade</div>
         <div class="row3">
           <div><label for="entry">Entry price</label><input type="number" id="entry" inputmode="decimal" step="any"></div>
           <div><label for="sl">Stop loss</label><input type="number" id="sl" inputmode="decimal" step="any"></div>
           <div><label for="tp">Take profit</label><input type="number" id="tp" inputmode="decimal" step="any"></div>
         </div>
         <div class="msg err" id="calcErr" role="alert"></div>
+        <div class="cgrp">Position size</div>
         <div class="row3">
           <div>
             <label for="sizeBy">Size by</label>
@@ -645,6 +672,19 @@
           <div><label for="margin" id="amtLabel">Amount (USDT)</label><input type="number" id="margin" inputmode="decimal" step="any" min="0"></div>
           <div><label for="lev">Leverage (x)</label><input type="number" id="lev" inputmode="decimal" step="any" min="1"></div>
         </div>
+        <div class="cgrp">Account &amp; risk</div>
+        <div class="row3">
+          <div><label for="bal">Account balance (USDT)</label><input type="number" id="bal" inputmode="decimal" step="any" min="0" placeholder="e.g. 500"></div>
+          <div><label for="maxrisk">Max risk per trade %</label><input type="number" id="maxrisk" inputmode="decimal" step="0.1" min="0.1" value="1"></div>
+          <div>
+            <label for="mode">Margin mode</label>
+            <select id="mode">
+              <option value="isolated">Isolated</option>
+              <option value="cross" selected>Cross</option>
+            </select>
+          </div>
+        </div>
+        <div class="cgrp">Fees &amp; funding</div>
         <div class="row3">
           <div><label for="maker">Maker fee %</label><input type="number" id="maker" step="any" value="0"></div>
           <div><label for="taker">Taker fee %</label><input type="number" id="taker" step="any" value="0.02"></div>
@@ -658,26 +698,20 @@
         </div>
         <div class="row3">
           <div><label for="fund">Funding rate %</label><input type="number" id="fund" inputmode="decimal" step="any" placeholder="e.g. 0.01"></div>
-          <div><label for="minrr">Min reward : risk</label><input type="number" id="minrr" inputmode="decimal" step="0.1" min="1" value="1.5"></div>
-          <div>
-            <label for="mode">Margin mode</label>
-            <select id="mode">
-              <option value="isolated">Isolated</option>
-              <option value="cross" selected>Cross</option>
-            </select>
-          </div>
-        </div>
-        <div class="row3">
-          <div><label for="bal">Account balance (USDT)</label><input type="number" id="bal" inputmode="decimal" step="any" min="0" placeholder="e.g. 500"></div>
-          <div><label for="maxrisk">Max risk per trade %</label><input type="number" id="maxrisk" inputmode="decimal" step="0.1" min="0.1" value="1"></div>
+          <div><label for="fundn">Funding payments</label><input type="number" id="fundn" inputmode="numeric" step="1" min="0" value="0" title="How many funding settlements you expect to hold through. 0 = not included in P&amp;L"></div>
           <div><label for="mmr">Maintenance margin %</label><input type="number" id="mmr" inputmode="decimal" step="any" min="0" value="0.1"></div>
         </div>
+        <div class="cgrp">Rules &amp; result</div>
         <div class="row">
+          <div><label for="minrr">Min reward : risk</label><input type="number" id="minrr" inputmode="decimal" step="0.1" min="1" value="1.5"></div>
           <div><label for="actual">Actual profit / loss ($)</label><input type="number" id="actual" step="any" placeholder="e.g. 12.5 or -8"></div>
-          <div><label for="fundn">Funding payments</label><input type="number" id="fundn" inputmode="numeric" step="1" min="0" value="0" title="How many funding settlements you expect to hold through. 0 = not included in P&amp;L"></div>
         </div>
         </div>
-
+        <div class="btns calc-actions">
+          <button type="button" class="btn primary" id="btnSuggest">Suggest amount &amp; leverage</button>
+          <button type="button" class="btn" id="btnCalcClear">Clear trade fields</button>
+        </div>
+        <div class="msg wrn" id="suggNote"></div>
         <div class="res" style="margin-top:12px">
           <div class="box"><div class="k">Profit if TP hit (gross / net)</div><div class="v pos" id="rProfit">–</div></div>
           <div class="box"><div class="k">Loss if SL hit (gross / net)</div><div class="v neg" id="rLoss">–</div></div>
@@ -764,6 +798,7 @@
 <div class="undo" id="undoBar" hidden><span id="undoTxt"></span><button type="button" id="undoBtn">Undo</button></div>
 <div class="toast" id="toast"></div>
 
+<script>window.MW_BG = /[?&]bg=1/.test(location.search);</script>
 <script>
 /* ===== CHECKLIST + CALCULATOR ===== */
 (function(){
@@ -772,12 +807,12 @@
   // ---------------- QUESTIONS ----------------
   // Separate question sets for LONG and SHORT (same ids so scoring/CSV stay aligned)
   const MUST = [
-    { id:"trend",  long:"Is the 1H trend UP, or is price at the bottom of a 1H range?",
-                   short:"Is the 1H trend DOWN, or is price at the top of a 1H range?",
-                   hintLong:"Use the 4H as context. Going against the 1H needs a sweep of a strong level and at least 2R.",
-                   hintShort:"Use the 4H as context. Going against the 1H needs a sweep of a strong level and at least 2R." },
-    { id:"level",  long:"Is price at a SUPPORT level you marked before?",
-                   short:"Is price at a RESISTANCE level you marked before?" },
+    { id:"trend",  long:"Does the 1H allow this long? (1H uptrend, bottom of a 1H range, or a sweep of a strong level)",
+                   short:"Does the 1H allow this short? (1H downtrend, top of a 1H range, or a sweep of a strong level)",
+                   hintLong:"Against the 1H trend only counts after a sweep of a strong level and with at least 2R. The 4H is context.",
+                   hintShort:"Against the 1H trend only counts after a sweep of a strong level and with at least 2R. The 4H is context." },
+    { id:"level",  long:"Is price at a key SUPPORT? (swing low, previous day/week low, open, or equal lows)",
+                   short:"Is price at a key RESISTANCE? (swing high, previous day/week high, open, or equal highs)" },
     { id:"sweep",  long:"Did price dip below support, then close back above it?",
                    short:"Did price spike above resistance, then close back below it?",
                    hintLong:"A quick fake-out below support, then a candle closes back above it.",
@@ -794,10 +829,10 @@
                    hintShort:"Answered automatically when the calculator is filled in." }
   ];
   const BONUS = [
-    { id:"fresh",  long:"Is this support fresh (touched 2 times or less)?",
-                   short:"Is this resistance fresh (touched 2 times or less)?" },
-    { id:"volume", long:"Was there a volume spike on the bounce off support?",
-                   short:"Was there a volume spike on the rejection from resistance?" },
+    { id:"fresh",  long:"Is this support fresh (tested 2 times or less in the last 5 days)?",
+                   short:"Is this resistance fresh (tested 2 times or less in the last 5 days)?" },
+    { id:"volume", long:"Was the sweep candle volume at least 1.5x average?",
+                   short:"Was the sweep candle volume at least 1.5x average?" },
     { id:"room",   long:"Is the path to your target clear of strong resistance?",
                    short:"Is the path to your target clear of strong support?" },
     { id:"news",   long:"Is there no major news in the next hour?",
@@ -1298,6 +1333,7 @@
   }
 
   function download(name, text){
+    if (window.AndroidBridge && typeof window.AndroidBridge.saveCsv === "function") { window.AndroidBridge.saveCsv(name, text); return true; }
     const data = "\ufeff" + text;
     try {
       const blob = new Blob([data], {type:"text/csv;charset=utf-8"});
@@ -1368,6 +1404,7 @@
   $("btnShort").addEventListener("click", () => setDir("short"));
   ["entry","sl","tp","margin","lev","maker","taker","fund","fundn","minrr","mmr","bal","maxrisk"].forEach(id => $(id).addEventListener("input", refresh));
   ["sizeBy","entryType","mode"].forEach(id => $(id).addEventListener("change", refresh));
+  ["entry","sl","bal","maxrisk","mode","sizeBy"].forEach(id => $(id).addEventListener("input", () => $("suggNote").classList.remove("show")));
   ["coin","entry","sl","tp","margin","lev","bal"].forEach(id => $(id).addEventListener("input", () => { $(id).classList.remove("missing"); updateSaveState(); }));
   $("coin").addEventListener("input", () => {
     if (state.suggMeta && $("coin").value.trim().toUpperCase() !== state.suggMeta.coin){
@@ -1380,6 +1417,54 @@
     if (isNaN(v) || v < 1){ $("minrr").value = isNaN(v) ? "1.5" : "1"; toast("Minimum reward : risk is 1"); refresh(); }
   });
 
+  $("btnChkClear").addEventListener("click", () => { state.answers = {}; renderQuestions(); updateScore(); toast("Answers cleared"); });
+  $("btnCalcClear").addEventListener("click", () => {
+    ["entry","sl","tp","fund","margin","lev"].forEach(id => { $(id).value = ""; $(id).classList.remove("missing", "bad"); });
+    $("suggNote").classList.remove("show");
+    refresh(); toast("Trade fields cleared");
+  });
+  // ---------------- SUGGEST AMOUNT & LEVERAGE ----------------
+  // Size = balance x risk % / loss per coin at the stop (incl. fees).
+  // Leverage = lowest that keeps margin at or under 20% of balance, capped so liquidation stays 1.5x the stop distance away.
+  // After 2 losses in a row (Actual P/L in the log) risk is halved.
+  function suggestSize(){
+    const note = $("suggNote"), say = (m, ok) => { note.innerHTML = m; note.className = "msg " + (ok ? "info" : "wrn") + " show"; };
+    const entry = num("entry"), sl = num("sl"), bal = num("bal");
+    const miss = [];
+    if (!(entry > 0)) miss.push("entry"); if (!(sl > 0)) miss.push("stop loss"); if (!(bal > 0)) miss.push("account balance");
+    if (miss.length){ say("Add " + miss.join(", ") + " first."); return; }
+    const dir = state.dir === "long" ? 1 : -1;
+    if ((entry - sl) * dir <= 0){ say("The stop loss must be " + (dir === 1 ? "below" : "above") + " entry for a " + state.dir.toUpperCase() + "."); return; }
+    const maker = (num("maker") || 0) / 100, taker = (num("taker") || 0) / 100;
+    const inRate = $("entryType").value === "market" ? taker : maker;
+    const mmr = Math.max(0, num("mmr") || 0) / 100, mode = $("mode").value;
+    let risk = Math.max(0.1, num("maxrisk") || 1), why = [];
+    const acts = getLog().map(r => r["Actual P/L"]).filter(v => typeof v === "number");
+    let streak = 0; for (let i = acts.length - 1; i >= 0 && acts[i] < 0; i--) streak++;
+    if (streak >= 2){ risk = risk / 2; why.push(streak + " losses in a row in your log, so risk is halved to " + Number(risk.toFixed(2)) + "%"); }
+    const perCoin = Math.abs(entry - sl) + entry * inRate + sl * taker;
+    let qty = bal * risk / 100 / perCoin, notional = qty * entry;
+    const d = Math.abs(sl - entry) / entry, k = dir === 1 ? (1 - mmr) : (1 + mmr);
+    const denom = mmr + 1.5 * d * k;
+    const levCap = mode === "isolated" ? Math.max(1, Math.floor(1 / denom)) : 125;
+    let lev = Math.max(1, Math.ceil(notional / (0.2 * bal)));
+    if (lev > levCap){
+      lev = levCap;
+      const maxN = 0.2 * bal * lev;
+      if (notional > maxN){ notional = maxN; qty = notional / entry; why.push("size cut so margin stays at 20% of balance at the safe leverage"); }
+    }
+    if (mode === "cross" && notional > bal / denom){ notional = bal / denom; qty = notional / entry; why.push("size cut so cross liquidation stays well past the stop"); }
+    const sizeBy = $("sizeBy").value;
+    const amt = sizeBy === "margin" ? notional / lev : sizeBy === "notional" ? notional : sizeBy === "qty" ? qty : notional * (1 / lev + 2 * taker);
+    $("margin").value = sizeBy === "qty" ? Number(qty.toPrecision(6)) : Number(amt.toFixed(2));
+    $("lev").value = lev;
+    refresh();
+    const c = state.calc;
+    say("<b>Suggested:</b> " + (sizeBy === "qty" ? Number(qty.toPrecision(6)) + " coins" : fmt$(amt)) + " at <b>" + lev + "x</b> " +
+        "(position " + fmt$(notional) + ", margin " + fmt$(notional / lev) + "). Loss at SL about " + (c ? fmt$(Math.abs(c.loss)) : "-") +
+        " = " + (c ? (Math.abs(c.loss) / bal * 100).toFixed(2) : "-") + "% of balance." + (why.length ? "<br>" + why.join(". ") + "." : ""), true);
+  }
+  $("btnSuggest").addEventListener("click", suggestSize);
   $("btnCopy").addEventListener("click", () => copyText(summaryText()));
   $("btnSave").addEventListener("click", () => {
     const chk = missingForLog();
@@ -1467,6 +1552,7 @@
     $("maker").value = "0"; $("taker").value = "0.02"; $("fundn").value = "0"; $("mmr").value = "0.1"; $("minrr").value = "1.5"; $("maxrisk").value = "1";
     $("sizeBy").value = "cost"; $("entryType").value = "limit"; $("mode").value = "cross";
     setDir("long"); toast("Reset");
+    try { localStorage.removeItem("mwCalcPrefs"); } catch(e){}
     if (window.MW && window.MW.scanner) window.MW.scanner.clearInChecklist();
   });
 
@@ -1675,6 +1761,16 @@
     try { if (v > 0) localStorage.setItem(BAL_KEY, String(v)); else localStorage.removeItem(BAL_KEY); } catch(e){}
   });
 
+  // ---------------- REMEMBER CALCULATOR RULES (fees, R:R, risk) ----------------
+  const CP_KEY = "mwCalcPrefs", CP = ["maker","taker","minrr","maxrisk","mmr","entryType","sizeBy","mode"];
+  function loadCalcPrefs(){
+    try { const p = JSON.parse(localStorage.getItem(CP_KEY) || "{}"); CP.forEach(id => { if (p[id] !== undefined && p[id] !== "") $(id).value = p[id]; }); } catch(e){}
+    try { const b = localStorage.getItem(BAL_KEY); if (b) $("bal").value = b; } catch(e){}
+  }
+  const saveCalcPrefs = () => { try { const p = {}; CP.forEach(id => p[id] = $(id).value); localStorage.setItem(CP_KEY, JSON.stringify(p)); } catch(e){} };
+  CP.forEach(id => { $(id).addEventListener("change", saveCalcPrefs); $(id).addEventListener("input", saveCalcPrefs); });
+  loadCalcPrefs();
+  window.MW.loadCalcPrefs = loadCalcPrefs;
   refresh(); renderLog(); markNav(true);
   // Old two-page hand-over keys are no longer used
   try { ["mwHandover", "mwChecklistLive"].forEach(k => localStorage.removeItem(k)); } catch(e){}
@@ -1702,11 +1798,13 @@
 (function(){
   "use strict";
   const $ = id => document.getElementById(id);
+  const BG = !!window.MW_BG;                                   // hidden copy run by the Android background scanner
+  const APP = !!(window.MWNative && typeof window.MWNative.bgState === "function");
   // ---------------- SETTINGS ----------------
   const SKEY = "mwScannerSettings";
   const FIELDS = ["exchange","minVol","maxCoins","dirMode","proxy"];
   try { const s = JSON.parse(localStorage.getItem(SKEY) || "{}"); FIELDS.forEach(f => { if (s[f] !== undefined && $(f)) $(f).value = s[f]; }); } catch(e){}
-  const saveSettings = () => { try { const s = {}; FIELDS.forEach(f => s[f] = $(f).value); localStorage.setItem(SKEY, JSON.stringify(s)); } catch(e){} };
+  const saveSettings = () => { if (BG) return; try { const s = {}; FIELDS.forEach(f => s[f] = $(f).value); localStorage.setItem(SKEY, JSON.stringify(s)); } catch(e){} };
   FIELDS.forEach(f => $(f).addEventListener("change", saveSettings));
   // Fees, minimum R:R, balance and risk come from the calculator, so the scanner and the calculator agree
   const numIn = id => { const el = $(id); const v = el ? parseFloat(el.value) : NaN; return isFinite(v) ? v : null; };
@@ -1718,13 +1816,29 @@
   // ---------------- HELPERS ----------------
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
   const fmtVol = v => v >= 1e9 ? "$" + (v/1e9).toFixed(2) + "B" : v >= 1e6 ? "$" + (v/1e6).toFixed(1) + "M" : v >= 1e3 ? "$" + (v/1e3).toFixed(0) + "K" : "$" + Math.round(v);
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const sleep = ms => BG ? Promise.resolve() : new Promise(r => setTimeout(r, ms));   // background: no timers (Android throttles hidden pages)
   const hhmm = ts => { const d = new Date(ts); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
   function toast(msg, ms){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), ms || 2200); }
   function showErr(html){ const e = $("scanErr"); e.innerHTML = html; e.classList.add("show"); }
   function clearErr(){ $("scanErr").classList.remove("show"); }
   const DEFAULT_PROXY = "https://mw-scanner.flast8021.workers.dev";
+  // In the Android app, requests go through the phone directly (no browser CORS, no proxy needed)
+  const NATIVE = !!(window.MWNative && typeof window.MWNative.httpGet === "function");
+  const netCbs = {}; let netId = 0;
+  window.MWNet = { done(id, status, body){
+    const cb = netCbs[id]; if (!cb) return; delete netCbs[id];
+    if (status >= 200 && status < 300) cb.res(body);
+    else cb.rej(status > 0 ? new Error("HTTP " + status) : new TypeError("Failed to fetch (" + body + ")"));
+  } };
   async function getJSON(url){
+    if (NATIVE){
+      const body = await new Promise((res, rej) => {
+        const id = String(++netId); netCbs[id] = { res, rej };
+        setTimeout(() => { if (netCbs[id]){ delete netCbs[id]; rej(new TypeError("Failed to fetch (no reply in 40s)")); } }, 40000);
+        window.MWNative.httpGet(id, url);
+      });
+      return JSON.parse(body);
+    }
     let proxy = $("proxy").value.trim().replace(/\/?\?url=.*$/i, "").replace(/\/+$/, "");
     if (!proxy && url.indexOf("contract.mexc.com") !== -1) proxy = DEFAULT_PROXY;
     const target = proxy ? proxy + "/?url=" + encodeURIComponent(url) : url;
@@ -2077,6 +2191,7 @@
     const rew = (tp - entry) * d - entry * u.mk - tp * u.mk, rsk = (entry - sl) * d + entry * u.mk + sl * u.tk;
     const rr = rsk > 0 ? Math.max(0, rew / rsk) : 0;
     const Mx = X + d * 0.6 * (tp - X);
+    const needRR = type === "reversal" ? Math.max(2, u.minrr) : u.minrr;
     // Has a Ready setup already failed or run away?
     let fate = null;
     if (status === "ready"){
@@ -2088,7 +2203,6 @@
       }
       if (!fate && (up ? x.price >= Mx : x.price <= Mx)) fate = "missed";
     }
-    const needRR = type === "reversal" ? Math.max(2, u.minrr) : u.minrr;
     const sf = [];
     if (fate === "invalid") sf.push("Invalid: closed beyond the stop");
     if (fate === "missed") sf.push("Missed: ran toward target without a retest");
@@ -2106,7 +2220,7 @@
     const s = {
       trend: type === "trend" ? { v: true, r: "1H is " + trendWord(x.bias1) + (x.tr4 === d ? ", 4H agrees" : "") }
            : type === "range" ? { v: up ? x.rPos <= 0.3 : x.rPos >= 0.7, r: "1H is ranging, price is " + Math.round(x.rPos * 100) + "% up the range" }
-           : { v: false, r: "Counter-trend: 1H is " + trendWord(x.bias1) },
+           : { v: status !== "at" && L.strength >= 12 && rr >= needRR, r: "Reversal: 1H is " + trendWord(x.bias1) + ", " + (status !== "at" ? "swept a " + strWord(L.strength) + " level" : "no sweep yet") + ", R:R 1:" + rr.toFixed(2) },
       level: dist <= 1 ? { v: true, r: "Price is " + dist.toFixed(1) + " ATR from " + word + " " + lvTxt + " (" + L.label + ")" }
                        : { v: false, r: "Price is " + dist.toFixed(1) + " ATR from " + word + " " + lvTxt },
       sweep: T ? { v: true, r: tf + " wick " + (up ? "below " : "above ") + lvTxt + ", then closed back " + (up ? "above" : "below") }
@@ -2284,6 +2398,7 @@
         } catch(e){ fails++; lastErr = e && e.message ? e.message : String(e); rows.push({ tk, cands: [], reason: "Data failed to load" }); }
         done++;
         prog.style.width = Math.round(done / list.length * 100) + "%";
+        if (BG && window.MWNative.bgProgress) window.MWNative.bgProgress("Scanning " + done + "/" + list.length);
         $("status").textContent = "Scanning " + done + "/" + list.length + ": " + tk.base + "USDT";
       });
       if (fails === list.length) throw new Error("Candle data could not be loaded for any coin. Last error: " + lastErr);
@@ -2488,7 +2603,7 @@
   const AUTO_KEY = "mwAutoRefresh";
   try { $("autoRef").checked = localStorage.getItem(AUTO_KEY) === "1"; } catch(e){}
   $("autoRef").addEventListener("change", () => { try { localStorage.setItem(AUTO_KEY, $("autoRef").checked ? "1" : "0"); } catch(e){} });
-  setInterval(() => {
+  if (!BG) setInterval(() => {
     if (!$("autoRef").checked || busy || document.hidden || !lastScan || Date.now() - lastScan < 5 * 60000) return;
     if (watches.size){ $("status").textContent = "Auto-refresh paused while coins are on live watch."; return; }
     scan(true);
@@ -2506,28 +2621,43 @@
     sigSave(a); renderPerf();
   }
   // Replays 15m candles after each signal: filled? then stop or target first? (same-candle tie counts as a loss)
+  // Replays candles after each signal: filled? then stop or target first? (same-candle tie counts as a loss)
+  // Open trades are tracked until the stop or target is hit, however long that takes.
   function resolveSig(s, c){
     const d = s.dir, up = d === 1;
-    if (!c.length || c[0].t > s.t){ if (Date.now() - s.t > 26 * HOUR) s.res = s.res === "open" ? "timeout" : "nodata"; return; }
+    if (!c.length || c[0].t > s.t){ s.res = s.res === "open" || s.res === "pending" ? s.res : "nodata"; s.gap = true; return; }
+    s.gap = false;
     let filled = false;
     for (const b of c.filter(k => k.t >= s.t)){
       if (!filled){
         if (b.t > s.exp){ s.res = "expired"; return; }
         if (up ? b.l <= s.entry : b.h >= s.entry){
-          filled = true;
-          if (up ? b.l <= s.sl : b.h >= s.sl){ s.res = "loss"; s.R = -1; return; }
+          filled = true; s.fillT = s.fillT || b.t;
+          if (up ? b.l <= s.sl : b.h >= s.sl){ s.res = "loss"; s.R = -1; s.endT = b.t; return; }
           continue;
         }
         if (up ? b.h >= s.M : b.l <= s.M){ s.res = "missed"; return; }
       } else {
-        if (up ? b.l <= s.sl : b.h >= s.sl){ s.res = "loss"; s.R = -1; return; }
-        if (up ? b.h >= s.tp : b.l <= s.tp){ s.res = "win"; s.R = +s.rr.toFixed(2); return; }
+        if (up ? b.l <= s.sl : b.h >= s.sl){ s.res = "loss"; s.R = -1; s.endT = b.t; return; }
+        if (up ? b.h >= s.tp : b.l <= s.tp){ s.res = "win"; s.R = +(+s.rr).toFixed(2); s.endT = b.t; return; }
       }
     }
+    if (c.length){ const last = c[c.length - 1]; s.lastPx = last.c; s.chkT = Date.now(); }
     s.res = filled ? "open" : Date.now() > s.exp ? "expired" : "pending";
   }
-  let perfBusy = false;
-  async function updateSignals(){
+  // 15m candles cover ~25h. For older trades, 1H candles (10 days) fill the part before that.
+  async function sigCandles(ex, sym, from){
+    const c15 = closedOnly(await EX[ex].klines(sym, "15m"), "15m");
+    if (!c15.length || c15[0].t <= from) return c15;
+    const c1 = closedOnly(await EX[ex].klines(sym, "1h"), "1h").filter(k => k.t + 3600000 <= c15[0].t);
+    return c1.concat(c15);
+  }
+  let perfBusy = false, perfP = null;
+  function updateSignals(){                       // one check at a time; callers share it
+    if (!perfP) perfP = updateSignals0().finally(() => { perfP = null; });
+    return perfP;
+  }
+  async function updateSignals0(){
     if (perfBusy) return;
     const a = sigLoad(), open = a.filter(s => s.res === "pending" || s.res === "open");
     if (!open.length){ renderPerf(); return; }
@@ -2535,14 +2665,14 @@
     const groups = {};
     open.forEach(s => { const k = s.ex + "|" + s.sym; (groups[k] = groups[k] || []).push(s); });
     await pool(Object.values(groups), 2, async g => {
-      try { const c = closedOnly(await EX[g[0].ex].klines(g[0].sym, "15m"), "15m"); g.forEach(s => resolveSig(s, c)); } catch(e){}
+      try { const c = await sigCandles(g[0].ex, g[0].sym, Math.min(...g.map(s => s.t))); g.forEach(s => resolveSig(s, c)); } catch(e){}
     });
     const fresh = sigLoad();                         // keep signals logged while this was running
     a.forEach(s => { const f = fresh.find(z => z.t === s.t && z.sym === s.sym && z.dir === s.dir); if (f) Object.assign(f, s); });
     sigSave(fresh); perfBusy = false; renderPerf();
   }
   const RES = { win: ["Win", "pos"], loss: ["Loss", "neg"], open: ["In trade", ""], pending: ["Waiting for entry", ""], missed: ["Missed (no retest)", "k"],
-                expired: ["Expired (no fill)", "k"], timeout: ["No result after 24h", "k"], nodata: ["No data", "k"] };
+                expired: ["Expired (no fill)", "k"], timeout: ["No result", "k"], nodata: ["No data", "k"] };
   function renderPerf(){
     const box = $("perfBody"); if (!box) return;
     const a = sigLoad();
@@ -2568,12 +2698,19 @@
     h += '<div class="tablewrap ptab"><table><thead><tr><th></th><th>Trades</th><th>Win %</th><th>Avg R</th></tr></thead><tbody>' +
       grp("Grade", s => s.grade, k => "Grade " + k) + grp("Setup type", s => s.type, k => TYPE[k] || k) + grp("Trigger", s => s.tf, k => k + " trigger") +
       grp("Level type", s => (LT[s.lt] || { g: s.lt }).g, k => k) + grp("Direction", s => s.dir, k => k === 1 ? "Long" : "Short") + '</tbody></table></div>';
-    h += '<h3>Recent signals</h3><div class="tablewrap"><table><tbody>' + a.slice(-10).reverse().map(s => {
+    const live = a.filter(s => s.res === "open" || s.res === "pending");
+    const row = s => {
       const r = RES[s.res] || [s.res, ""];
       const d = new Date(s.t);
-      return '<tr><td>' + String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + " " + hhmm(s.t) + '</td><td><b>' + esc(s.base) + '</b> ' + (s.dir === 1 ? "L" : "S") +
-             '</td><td>' + s.grade + '</td><td class="' + r[1] + '">' + r[0] + (s.res === "win" ? " +" + s.R + "R" : s.res === "loss" ? " -1R" : "") + '</td></tr>';
-    }).join("") + '</tbody></table></div>';
+      const pnl = s.res === "open" && isFinite(s.lastPx) ? ((s.lastPx - s.entry) * s.dir / Math.abs(s.entry - s.sl)) : null;
+      return '<tr><td>' + String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0") + " " + hhmm(s.t) + '</td><td><b>' + esc(s.base) + '</b> ' + (s.dir === 1 ? "L" : "S") + ' &middot; ' + s.grade +
+             '</td><td><small>E ' + fmtPx(s.entry) + '<br>SL ' + fmtPx(s.sl) + ' &middot; TP ' + fmtPx(s.tp) + '</small></td><td class="' + r[1] + '">' + r[0] +
+             (s.res === "win" ? " +" + s.R + "R" : s.res === "loss" ? " -1R" : "") +
+             (pnl !== null ? '<br><small class="' + (pnl >= 0 ? "pos" : "neg") + '">now ' + (pnl >= 0 ? "+" : "") + pnl.toFixed(2) + 'R</small>' : "") +
+             (s.res === "pending" ? '<br><small class="k">until ' + hhmm(s.exp) + '</small>' : "") + '</td></tr>';
+    };
+    if (live.length) h += '<h3>Being tracked (' + live.length + ')</h3><div class="tablewrap"><table><tbody>' + live.slice().reverse().map(row).join("") + '</tbody></table></div>';
+    h += '<h3>Recent signals</h3><div class="tablewrap"><table><tbody>' + a.slice(-10).reverse().map(row).join("") + '</tbody></table></div>';
     box.innerHTML = h;
   }
   $("btnPerfUpd").addEventListener("click", () => { toast("Checking signal results..."); updateSignals(); });
@@ -3047,16 +3184,66 @@
 
   window.MW = window.MW || {};
   window.MW.scanner = { clearInChecklist };
-  restoreResults();
+  // ---------------- ANDROID BACKGROUND SCANNER ----------------
+  window.MW.bg = {
+    async run(exKey){
+      try {
+        try { const st = JSON.parse(localStorage.getItem(SKEY) || "{}"); ["minVol","maxCoins","dirMode"].forEach(f => { if (st[f] !== undefined) $(f).value = st[f]; }); } catch(e){}
+        if (window.MW.loadCalcPrefs) window.MW.loadCalcPrefs();
+        if (EX[exKey]) $("exchange").value = exKey;
+        const key = s => s.t + "|" + s.sym + "|" + s.dir;
+        const before = new Set(sigLoad().map(key));
+        await scan(true);
+        if (window.MWNative.bgProgress) window.MWNative.bgProgress("Updating tracked signals");
+        await updateSignals();
+        const fresh = sigLoad().filter(s => !before.has(key(s)));
+        window.MWNative.bgDone(JSON.stringify({ status: $("status").textContent, ready: fresh.map(s => ({
+          base: s.base, dir: s.dir, grade: s.grade, type: TYPE[s.type] || s.type, tf: s.tf, entry: fmtPx(s.entry), sl: fmtPx(s.sl), tp: fmtPx(s.tp), rr: (+s.rr).toFixed(2), exp: hhmm(s.exp) })) }));
+      } catch(e){ window.MWNative.bgDone(JSON.stringify({ status: "Error: " + (e && e.message ? e.message : e), ready: [] })); }
+    }
+  };
+  function bgRender(){
+    if (!APP || BG) return;
+    let st; try { st = JSON.parse(window.MWNative.bgState()); } catch(e){ return; }
+    $("bgOn").checked = !!st.on; if (EX[st.ex]) $("bgEx").value = st.ex;
+    const p = [];
+    if (!st.on) p.push("Off. No background scans or alerts.");
+    else {
+      p.push(st.msg || "Starting...");
+      if (st.last) p.push("Last scan " + hhmm(st.last));
+      if (st.next) p.push("next " + hhmm(st.next));
+    }
+    $("bgStatus").textContent = p.join(" · ");
+    const w = [];
+    if (st.on && !st.notif) w.push("Notifications are blocked. Allow them for Manner Wein in Android settings, or you will not get alerts.");
+    if (st.on && !st.battery) w.push("Battery optimisation is on, so Android may delay or stop scans. Tap Battery settings and choose Unrestricted / Don't optimise.");
+    $("bgWarn").innerHTML = w.map(esc).join("<br>"); $("bgWarn").classList.toggle("show", w.length > 0);
+  }
+  if (APP && !BG){
+    $("bgCard").hidden = false;
+    $("bgOn").addEventListener("change", () => { window.MWNative.bgSet($("bgOn").checked, $("bgEx").value); toast($("bgOn").checked ? "Background scanner on" : "Background scanner off. All background checks stopped."); setTimeout(bgRender, 800); });
+    $("bgEx").addEventListener("change", () => { window.MWNative.bgSet($("bgOn").checked, $("bgEx").value); setTimeout(bgRender, 300); });
+    $("bgBattery").addEventListener("click", () => window.MWNative.openBatterySettings());
+    setInterval(() => { if (!document.hidden) bgRender(); }, 10000);
+    bgRender();
+  }
+  // Called by the app when it comes back to the front
+  window.MW.app = { resume(fromAlert){
+    bgRender(); renderPerf();
+    try {
+      const s = JSON.parse(localStorage.getItem(RKEY) || "null");
+      if (s && s.at > lastScan && !watches.size && !busy){ restoreResults(); toast("Showing the latest background scan (" + hhmm(s.at) + ")"); }
+    } catch(e){}
+    if (fromAlert){ const r = $("results"); if (r) setTimeout(() => r.scrollIntoView({ block: "start" }), 300); }
+  } };
+  if (!BG) restoreResults();
   renderDock();
   renderPerf();
-  setTimeout(updateSignals, 1500);
+  if (!BG) setTimeout(updateSignals, 1500);
 
   $("btnScan").addEventListener("click", () => scan(false));
   $("btnTest").addEventListener("click", testConnection);
 })();
-</script>
-
 </script>
 <script>document.querySelectorAll(".cy").forEach(e => e.textContent = new Date().getFullYear());</script>
 </body>
