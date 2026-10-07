@@ -50,6 +50,10 @@
     background:rgba(0,0,0,0.25); color:var(--text); font-size:14px; outline:none;
   }
   input:focus{border-color:var(--accent)}
+  /* Calculator: no number spinners (they overlapped the copy button) */
+  #sec-calc input[type=number]{-moz-appearance:textfield; appearance:textfield}
+  #sec-calc input[type=number]::-webkit-inner-spin-button,
+  #sec-calc input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none; appearance:none; margin:0}
   select option{background:#06203a; color:var(--text)}
   input:disabled{opacity:.45}
   .row{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px}
@@ -675,7 +679,7 @@
         <div class="cgrp">Account &amp; risk</div>
         <div class="row3">
           <div><label for="bal">Account balance (USDT)</label><input type="number" id="bal" inputmode="decimal" step="any" min="0" placeholder="e.g. 500"></div>
-          <div><label for="maxrisk">Max risk per trade %</label><input type="number" id="maxrisk" inputmode="decimal" step="0.1" min="0.1" value="1"></div>
+          <div><label for="maxrisk">Max risk per trade %</label><input type="number" id="maxrisk" inputmode="decimal" step="0.1" min="0.1" max="5" value="1" title="0.1% to 5% of balance"></div>
           <div>
             <label for="mode">Margin mode</label>
             <select id="mode">
@@ -934,6 +938,15 @@
 
   // ---------------- CALCULATOR ----------------
   const num = id => { const v = parseFloat($(id).value); return isNaN(v) ? null : v; };
+  // Max risk per trade: must be 0.1% to 5%. Out-of-range values are rejected, never silently used.
+  const RISK_MIN = 0.1, RISK_MAX = 5;
+  function riskSetting(){
+    const v = num("maxrisk");
+    const ok = v !== null && isFinite(v) && v >= RISK_MIN && v <= RISK_MAX;
+    return { ok, val: ok ? v : null, raw: v };
+  }
+  window.MW = window.MW || {};
+  window.MW.riskSetting = riskSetting;
   const fmt$ = v => (v < 0 ? "-$" : "$") + Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
   // Small dollar amounts keep 3 significant digits (e.g. $0.0045) instead of rounding to $0.00
   const fmt$s = v => { const a = Math.abs(v); if (a >= 1 || a === 0) return fmt$(v);
@@ -958,6 +971,7 @@
     err.classList.remove("show");
     state.calcErr = "";
     ["entry","sl","tp","margin","lev","bal"].forEach(id => $(id).classList.remove("bad"));
+    $("maxrisk").classList.toggle("bad", !riskSetting().ok);
     $("amtLabel").textContent = sizeBy === "qty" ? "Quantity (coins)" : "Amount (USDT)";
     const ids = ["rProfit","rLoss","rRR","rROE","rSize","rMargin","rMove","rFees","rFund","rLiq"];
     const clear = () => { ids.forEach(i => $(i).textContent = "–"); state.calc = null; state.rrAuto = null; state.rrReason = ""; state.risk = null; renderRisk(); };
@@ -1057,7 +1071,8 @@
   function assessRisk(x){
     const items = [];
     const add = (lvl, title, detail, fix) => items.push({ lvl, title, detail, fix });
-    const maxRisk = Math.max(0.1, num("maxrisk") || 1);
+    const rs = riskSetting();
+    const maxRisk = rs.ok ? rs.val : RISK_MIN;            // invalid setting -> judge against the strictest limit
     const hasBal = x.bal !== null && x.bal > 0;
     const lossAbs = Math.abs(x.loss);
     const d = Math.abs(x.fillSL - x.fillEntry) / x.fillEntry;          // stop distance (fraction)
@@ -1069,6 +1084,10 @@
       ? "Lower leverage to <b>" + Math.max(1, Math.floor(1 / denom)) + "x</b> or less."
       : "Cut position value to <b>" + fmt$(x.bal / denom) + "</b> or less, or add balance.";
     let riskPct = null;
+    // 0. Risk setting itself
+    if (!rs.ok)
+      add("red", "Max risk per trade is invalid", "Max risk is " + (rs.raw === null ? "empty" : rs.raw + "%") + ". It must be between " + RISK_MIN + "% and " + RISK_MAX + "% of your balance.",
+          "Set <b>Max risk per trade %</b> to a value like <b>1</b>.");
 
     // 1. Target does not cover costs
     if (x.profit <= 0)
@@ -1092,6 +1111,12 @@
     // 3. Balance-based checks
     if (hasBal){
       riskPct = lossAbs / x.bal * 100;
+      if (riskPct > RISK_MAX && rs.ok && riskPct <= 2 * maxRisk)
+        add("red", "Risking " + riskPct.toFixed(1) + "% of your balance", "Anything above " + RISK_MAX + "% per trade is never allowed.",
+            "Reduce the position so the loss at SL is under " + fmt$(x.bal * RISK_MAX / 100) + ".");
+      if (x.mode === "cross" && x.notional > 10 * x.bal)
+        add("red", "Position is " + (x.notional / x.bal).toFixed(1) + "x your balance on cross margin", "At " + x.lev + "x on cross, a slipped or failed stop can take most of the account.",
+            "Use <b>isolated</b> margin or cut position value to under " + fmt$(10 * x.bal) + ".");
       if (riskPct > maxRisk){
         const f = (x.bal * maxRisk / 100) / lossAbs;
         let detail = "Loss at SL is " + fmt$(lossAbs) + " of " + fmt$(x.bal) + ". Your limit is " + maxRisk + "% (" + fmt$(x.bal * maxRisk / 100) + ").";
@@ -1147,7 +1172,7 @@
     }
 
     const worst = items.some(i => i.lvl === "red") ? "red" : items.some(i => i.lvl === "amber") ? "amber" : "";
-    return { items, worst, riskPct, bal: hasBal ? x.bal : null, maxRisk, lossAbs };
+    return { items, worst, riskPct, bal: hasBal ? x.bal : null, maxRisk, riskOk: rs.ok, lossAbs };
   }
 
   function renderRisk(){
@@ -1159,7 +1184,8 @@
     let cls, status, sub = "";
     if (r.worst === "red"){ cls = "red"; status = "Change before entering"; }
     else if (r.worst === "amber"){ cls = "amber"; status = "Check before entering"; }
-    else if (r.riskPct !== null){ cls = "green"; status = "Risk check passed"; }
+    else if (r.riskPct !== null && r.riskOk && r.riskPct <= r.maxRisk && r.riskPct <= RISK_MAX){ cls = "green"; status = "Risk check passed"; }
+    else if (r.riskPct !== null){ cls = "red"; status = "Change before entering"; }
     else { cls = "info"; status = "Risk check"; }
     if (issues) sub = issues + " issue" + (issues > 1 ? "s" : "");
     if (r.riskPct !== null) sub = (sub ? sub + " · " : "") + "risking " + r.riskPct.toFixed(2) + "% (" + fmt$(r.lossAbs) + ")";
@@ -1438,7 +1464,9 @@
     const maker = (num("maker") || 0) / 100, taker = (num("taker") || 0) / 100;
     const inRate = $("entryType").value === "market" ? taker : maker;
     const mmr = Math.max(0, num("mmr") || 0) / 100, mode = $("mode").value;
-    let risk = Math.max(0.1, num("maxrisk") || 1), why = [];
+    const rs = riskSetting();
+    if (!rs.ok){ $("maxrisk").classList.add("bad"); say("Max risk per trade must be between " + RISK_MIN + "% and " + RISK_MAX + "% (you have " + (rs.raw === null ? "nothing" : rs.raw + "%") + "). Fix it, then try again."); return; }
+    let risk = rs.val, why = [];
     const acts = getLog().map(r => r["Actual P/L"]).filter(v => typeof v === "number");
     let streak = 0; for (let i = acts.length - 1; i >= 0 && acts[i] < 0; i--) streak++;
     if (streak >= 2){ risk = risk / 2; why.push(streak + " losses in a row in your log, so risk is halved to " + Number(risk.toFixed(2)) + "%"); }
@@ -1811,7 +1839,7 @@
   function userCfg(){
     const mk = (numIn("maker") ?? 0) / 100, tk = (numIn("taker") ?? 0.02) / 100;
     const bal = numIn("bal");
-    return { mk, tk, minrr: Math.max(1, numIn("minrr") ?? 1.5), bal: bal > 0 ? bal : null, risk: Math.max(0.1, numIn("maxrisk") ?? 1) };
+    return { mk, tk, minrr: Math.max(1, numIn("minrr") ?? 1.5), bal: bal > 0 ? bal : null, risk: (() => { const r = numIn("maxrisk"); return r !== null && r >= 0.1 && r <= 5 ? r : 1; })() };
   }
   // ---------------- HELPERS ----------------
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
