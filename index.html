@@ -360,7 +360,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <div><label for="coin">Coin search</label><div class="sugwrap"><input type="text" id="coin" placeholder="Type BTC, SOL..." autocomplete="off" autocapitalize="characters" spellcheck="false"><div class="coinsug" id="coinSug" hidden></div></div></div>
     </div>
     <div class="coinmeta" id="coinMeta">Loading MEXC futures coins...</div>
-    <div class="trade-head" style="grid-template-columns:1fr">
+    <div class="trade-head" id="dirTop" style="grid-template-columns:1fr">
       <div><label>Direction</label>
         <div class="dir" role="group" aria-label="Direction">
           <button id="btnLong" class="long on" type="button">LONG</button>
@@ -1393,14 +1393,14 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
     if (r.bottom < 0 || r.top > window.innerHeight || tipFor.hidden) hideTip(); else showTip(tipFor, tipPinned);
   }, { passive: true });
 
-  // New coin: clear the trade fields and jump to Prices
+  // New coin: clear the trade fields and jump to the LONG / SHORT selector
   function clearTradeFields(){
     ["entry","sl","tp","margin"].forEach(id => { $(id).value = ""; $(id).classList.remove("missing", "bad"); });
     $("lev").value = $("lev").min || 1; state.autoNotional = null;
     $("suggNote").classList.remove("show"); $("calcErr").classList.remove("show");
   }
   function scrollToPrices(){
-    const el = $("pricesTop"); if (!el) return;
+    const el = $("dirTop"); if (!el) return;
     window.scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + window.scrollY - 12), behavior: "smooth" });
   }
 
